@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Oficial e Formulário de Participação - Ação Entre Amigos</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-hover: #0369a1;
+      --border: #cbd5e1;
+      --disp: #22c55e;
+      --resv: #eab308;
+      --pago: #ef4444;
+      --selected: #6366f1;
+      --wa-green: #25d366;
+      --wa-hover: #1ebd5a;
+      --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.07);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b1120;
+      --surface: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0ea5e9;
+      --border: #334155;
+      --card-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 15px; }
+    .container { max-width: 1050px; margin: 0 auto; }
+
+    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    h1 { font-size: 1.35rem; color: var(--primary); }
+    .header-btns { display: flex; gap: 8px; align-items: center; }
+
+    .btn { padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn:hover { filter: brightness(0.95); }
+    .btn-primary { background: var(--primary); color: #fff; border: none; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-wa { background: var(--wa-green); color: #fff; border: none; font-size: 0.95rem; padding: 12px 20px; }
+    .btn-wa:hover { background: var(--wa-hover); }
+    .btn-danger { background: #fee2e2; color: #b91c1c; border-color: #f87171; }
+    .btn-admin { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: var(--card-shadow); }
+    .hero-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 10px; }
+    
+    /* GRADE DE PONTOS */
+    .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+    .legend { display: flex; gap: 12px; align-items: center; font-size: 0.85rem; flex-wrap: wrap; }
+    .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+    .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; max-height: 420px; overflow-y: auto; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
+    .ticket { padding: 10px 2px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: 1px solid transparent; user-select: none; }
+    .ticket.disponivel { background: rgba(34, 197, 94, 0.15); color: #15803d; border-color: #22c55e; }
+    .ticket.reservado { background: rgba(234, 179, 8, 0.2); color: #a16207; border-color: #eab308; cursor: not-allowed; opacity: 0.7; }
+    .ticket.pago { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border-color: #ef4444; cursor: not-allowed; opacity: 0.7; }
+    .ticket.user-selected { background: var(--selected) !important; color: #fff !important; border-color: #4338ca !important; transform: scale(1.08); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); }
+
+    /* FORMULÁRIO DO PARTICIPANTE */
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input, select, textarea { padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.9rem; }
+    
+    .cart-summary { background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--selected); border-radius: 8px; padding: 15px; margin: 15px 0; }
+    .pix-box { background: rgba(2, 132, 199, 0.08); border: 1px dashed var(--primary); padding: 14px; border-radius: 6px; margin: 15px 0; }
+    .disclaimer-box { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 0.85rem; margin-top: 15px; }
+
+    /* MODAL DE ADMIN */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
+    .modal-content { background: var(--surface); width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; border-radius: 10px; padding: 25px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+
+    footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 30px; padding: 20px 0; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body data-theme="light">
+
+<div class="container">
+  <header>
+    <div>
+      <h1 id="pubCertameTitle">Ação Solidária Entre Amigos</h1>
+      <small style="color:var(--text-muted)">Portal de Participação e Reserva Transparente</small>
+    </div>
+    <div class="header-btns">
+      <button class="btn" onclick="toggleTheme()" id="themeBtn">🌓 Tema</button>
+      <button class="btn btn-admin" onclick="openAdminModal()">🔒 Painel Admin</button>
+    </div>
+  </header>
+
+  <!-- PAINEL DE TRANSPARÊNCIA DA CAUSA -->
+  <div class="card">
+    <h2 style="font-size:1.15rem; color:var(--primary); margin-bottom:8px;">Objetivo e Regras do Certame Beneficente</h2>
+    <p id="pubDescription" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
+      Esta iniciativa comunitária destina 100% de seus recursos arrecadados para o amparo e despesas essenciais do beneficiário indicado.
+    </p>
+
+    <div class="hero-info">
+      <div><strong>Beneficiário / Causa:</strong> <span id="pubBeneficiario">--</span></div>
+      <div><strong>Premiação:</strong> <span id="pubPrize">--</span></div>
+      <div><strong>Valor do Ponto:</strong> <span style="color:#16a34a; font-weight:bold; font-size:1.1rem;">R$ <span id="pubUnitValue">0,00</span></span></div>
+      <div><strong>Data da Extração:</strong> <span id="pubDrawDate" style="font-weight:600;">--</span></div>
+      <div><strong>Critério de Sorteio:</strong> <span id="pubDrawMethod" style="color:var(--primary); font-weight:bold;">--</span></div>
+      <div><strong>Total de Pontos na Série:</strong> <span id="pubTotalNumbers">--</span></div>
+    </div>
+
+    <div class="pix-box">
+      <strong>Chave PIX Oficial de Apoio:</strong> <span id="pubPixKey" style="font-family:monospace; font-weight:bold; font-size:1rem;">61999487649</span><br>
+      <strong>Titular da Conta:</strong> <span id="pubPixTitular">Carlos Alberto Reis</span>
+    </div>
+  </div>
+
+  <!-- GRADE DE ESCOLHA DOS PONTOS -->
+  <div class="card">
+    <div class="filter-bar">
+      <div class="legend">
+        <strong>Legenda:</strong>
+        <span><span class="dot" style="background:var(--disp)"></span> Disponível (Clique p/ Escolher)</span>
+        <span><span class="dot" style="background:var(--selected)"></span> Selecionado por Você</span>
+        <span><span class="dot" style="background:var(--resv)"></span> Reservado</span>
+        <span><span class="dot" style="background:var(--pago)"></span> Confirmado (Pago)</span>
+      </div>
+      <div>
+        <button class="btn" style="font-size:0.75rem; padding:4px 8px;" onclick="clearUserSelection()">Desmarcar Todos</button>
+      </div>
+    </div>
+
+    <div class="tickets-grid" id="publicGridContainer"></div>
+  </div>
+
+  <!-- FORMULÁRIO DE ENVIO E RESERVA DO PARTICIPANTE -->
+  <div class="card">
+    <h2 style="font-size:1.15rem; color:var(--primary); margin-bottom:10px;">Formulário de Adesão e Solicitação de Pontos</h2>
+    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
+      Selecione os números desejados na grade acima, informe seu nome/nick e envie sua solicitação diretamente para a coordenação do certame.
+    </p>
+
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+      <div class="form-group">
+        <label>Seu Nome Completo ou Nickname:</label>
+        <input type="text" id="userName" placeholder="Ex.: Juliana Reis">
+      </div>
+      <div class="form-group">
+        <label>Seu WhatsApp com DDD:</label>
+        <input type="text" id="userPhone" placeholder="Ex.: 61998390725" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+    </div>
+
+    <!-- RESUMO DO CARRINHO DE PONTOS -->
+    <div class="cart-summary">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <strong>Números Escolhidos:</strong> <span id="dispSelectedNumbers" style="font-weight:bold; color:var(--selected); font-size:1rem;">Nenhum selecionado</span>
+        </div>
+        <div>
+          <strong>Quantidade:</strong> <span id="dispSelectedCount">0</span> bilhete(s)
+        </div>
+        <div>
+          <strong>Total em Real:</strong> <span style="font-size:1.2rem; font-weight:bold; color:#16a34a;">R$ <span id="dispSelectedTotal">0,00</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÃO OFICIAL DE DESPACHO PARA O WHATSAPP -->
+    <div style="text-align:center; margin-top:15px;">
+      <button class="btn btn-wa" onclick="submitReservationViaWhatsApp()">
+        📲 Enviar Pedido de Reserva pelo WhatsApp Oficial
+      </button>
+    </div>
+
+    <div class="disclaimer-box">
+      <strong>⚠️ AVISO DE TRANSPARÊNCIA:</strong> Este formulário gera uma <em>solicitação formal de reserva</em>. Para assegurar a idoneidade do certame e evitar bloqueios indevidos por terceiros, a confirmação definitiva da sua cota só é consolidada no sistema oficial após a validação do comprovante PIX pela coordenação.
+    </div>
+  </div>
+
+  <footer>
+    <p>&copy; 2026 Carlos Alberto Reis. Todos os direitos reservados.</p>
+    <p>Portal Distribuído GitHub Pages • Arquitetura Client-Side Segura • Integração WhatsApp</p>
+    <p>Chave PIX Oficial da Coordenação: <strong>61999487649</strong></p>
+  </footer>
+</div>
+
+<!-- MODAL ADMINISTRATIVO PROTEGIDO POR SENHA (rfb2026) -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
+      <h3 style="color:var(--primary);">🔒 Painel de Configuração do Certame (Admin)</h3>
+      <button class="btn btn-danger" onclick="closeAdminModal()">✕ Fechar</button>
+    </div>
+
+    <!-- TELA 1: LOGIN DE SENHA -->
+    <div id="adminAuthSection">
+      <div class="form-group">
+        <label>Digite a Senha de Acesso Administrativo:</label>
+        <input type="password" id="adminPasswordInput" placeholder="Senha do painel">
+      </div>
+      <button class="btn btn-primary" onclick="verifyAdminPassword()" style="width:100%; margin-top:8px;">Acessar Configurações</button>
+    </div>
+
+    <!-- TELA 2: CONFIGURAÇÕES LIBERADAS -->
+    <div id="adminSettingsSection" style="display:none;">
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
+        <div class="form-group">
+          <label>Nome do Certame / Ação:</label>
+          <input type="text" id="cfgCertameName">
+        </div>
+        <div class="form-group">
+          <label>Beneficiário / Causa Social:</label>
+          <input type="text" id="cfgBeneficiario">
+        </div>
+        <div class="form-group">
+          <label>Prêmio / Premiação:</label>
+          <input type="text" id="cfgPrize">
+        </div>
+        <div class="form-group">
+          <label>Valor de Cada Ponto (R$):</label>
+          <input type="number" id="cfgUnitValue" step="0.50" min="1">
+        </div>
+        <div class="form-group">
+          <label>Quantidade de Pontos (Série Livre):</label>
+          <input type="number" id="cfgTotalNumbers" min="10" max="9999" placeholder="Ex: 10, 20, 100, 1000">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp do Admin (Destino das Reservas):</label>
+          <input type="text" id="cfgAdminPhone" placeholder="Ex: 61999487649">
+        </div>
+        <div class="form-group">
+          <label>Critério de Sorteio:</label>
+          <select id="cfgDrawMethod">
+            <option value="federal">Loteria Federal da Caixa</option>
+            <option value="automatico">Sorteador Criptográfico no App</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data e Hora Prevista da Apuração:</label>
+          <input type="datetime-local" id="cfgDrawDate">
+        </div>
+        <div class="form-group">
+          <label>Chave PIX Oficial:</label>
+          <input type="text" id="cfgPixKey">
+        </div>
+        <div class="form-group">
+          <label>Titular da Chave PIX:</label>
+          <input type="text" id="cfgPixTitular">
+        </div>
+      </div>
+
+      <!-- ÁREA DE SINCRONIZAÇÃO COM O SISTEMA OFICIAL -->
+      <div style="margin-top:18px; padding:14px; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
+        <h4 style="color:var(--primary); margin-bottom:8px;">🔄 Sincronização com o Sistema Oficial de Rifas</h4>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">
+          Carregue o arquivo <code>backup_rifa_*.json</code> gerado pelo app oficial para marcar automaticamente como <strong>Reservado</strong> ou <strong>Pago</strong> os pontos já preenchidos.
+        </p>
+        <input type="file" id="importJsonOfficial" accept=".json" onchange="syncWithOfficialBackup(event)">
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveAdminSettings()">💾 Salvar Configurações Públicas</button>
+        <button class="btn" onclick="exportPortalConfig()">📥 Baixar Configuração (JSON)</button>
+        <button class="btn btn-danger" onclick="resetPortalNumbers()">⚠️ Limpar Todos os Pontos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * ARQUITETURA DE ESTADO DO FORMULÁRIO INTELIGENTE
+ */
+const DEFAULT_PORTAL_CONFIG = {
+  certame: "Ação Solidária Emergencial",
+  beneficiario: "Apoio Familiar e Saúde",
+  prize: "Prêmio Oficial Solidário",
+  unitValue: 10.0,
+  totalNumbers: 100,
+  adminPhone: "61999487649",
+  drawMethod: "federal",
+  drawDate: "2026-11-28T19:00",
+  pixKey: "61999487649",
+  pixTitular: "Carlos Alberto Reis",
+  ticketsStatus: {} // Guarda o status de cada número: 'disponivel', 'reservado', 'pago'
+};
+
+let portalDB = {};
+let userSelectedTickets = []; // Array de pontos selecionados pelo participante
+
+function initPortal() {
+  const local = localStorage.getItem("portal_rifa_github_db");
+  if (local) {
+    try {
+      portalDB = JSON.parse(local);
+    } catch(e) {
+      portalDB = JSON.parse(JSON.stringify(DEFAULT_PORTAL_CONFIG));
+    }
+  } else {
+    portalDB = JSON.parse(JSON.stringify(DEFAULT_PORTAL_CONFIG));
+    initTicketsStatus(portalDB.totalNumbers);
+    saveLocal();
+  }
+  updatePublicDisplay();
+  renderPublicGrid();
+}
+
+function initTicketsStatus(qty) {
+  portalDB.ticketsStatus = {};
+  const padLen = qty > 1000 ? 4 : (qty > 100 ? 3 : 2);
+  for (let i = 0; i < qty; i++) {
+    const numStr = i.toString().padStart(padLen, '0');
+    portalDB.ticketsStatus[numStr] = "disponivel";
+  }
+}
+
+function saveLocal() {
+  localStorage.setItem("portal_rifa_github_db", JSON.stringify(portalDB));
+}
+
+function toggleTheme() {
+  const current = document.body.getAttribute("data-theme");
+  document.body.setAttribute("data-theme", current === "dark" ? "light" : "dark");
+}
+
+function updatePublicDisplay() {
+  document.getElementById("pubCertameTitle").innerText = portalDB.certame;
+  document.getElementById("pubBeneficiario").innerText = portalDB.beneficiario;
+  document.getElementById("pubPrize").innerText = portalDB.prize;
+  document.getElementById("pubUnitValue").innerText = portalDB.unitValue.toFixed(2);
+  document.getElementById("pubTotalNumbers").innerText = `${portalDB.totalNumbers} cotas`;
+  document.getElementById("pubPixKey").innerText = portalDB.pixKey;
+  document.getElementById("pubPixTitular").innerText = portalDB.pixTitular;
+
+  const dateObj = portalDB.drawDate ? new Date(portalDB.drawDate) : null;
+  document.getElementById("pubDrawDate").innerText = dateObj && !isNaN(dateObj) 
+    ? dateObj.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) 
+    : "Data a definir";
+
+  document.getElementById("pubDrawMethod").innerText = portalDB.drawMethod === "federal" 
+    ? "Loteria Federal (Caixa Econômica Federal)" 
+    : "Sorteio Digital Automático Auditável";
+}
+
+/**
+ * GRADE DE ESCOLHA DO PARTICIPANTE
+ */
+function renderPublicGrid() {
+  const container = document.getElementById("publicGridContainer");
+  container.innerHTML = "";
+
+  Object.keys(portalDB.ticketsStatus).sort().forEach(num => {
+    const status = portalDB.ticketsStatus[num];
+    const isSelected = userSelectedTickets.includes(num);
+
+    const div = document.createElement("div");
+    div.className = `ticket ${status} ${isSelected ? 'user-selected' : ''}`;
+    div.innerText = num;
+
+    if (status === "disponivel") {
+      div.onclick = () => toggleTicketSelection(num);
+    } else {
+      div.title = `Ponto ${num} está ${status.toUpperCase()} no sistema oficial.`;
+    }
+
+    container.appendChild(div);
+  });
+
+  updateCartSummary();
+}
+
+function toggleTicketSelection(num) {
+  if (userSelectedTickets.includes(num)) {
+    userSelectedTickets = userSelectedTickets.filter(n => n !== num);
+  } else {
+    userSelectedTickets.push(num);
+    userSelectedTickets.sort();
+  }
+  renderPublicGrid();
+}
+
+function clearUserSelection() {
+  userSelectedTickets = [];
+  renderPublicGrid();
+}
+
+function updateCartSummary() {
+  const count = userSelectedTickets.length;
+  const total = count * portalDB.unitValue;
+
+  document.getElementById("dispSelectedNumbers").innerText = count > 0 
+    ? userSelectedTickets.join(", ") 
+    : "Nenhum selecionado";
+  document.getElementById("dispSelectedCount").innerText = count;
+  document.getElementById("dispSelectedTotal").innerText = total.toFixed(2);
+}
+
+/**
+ * DESPACHO DA SOLICITAÇÃO VIA WHATSAPP (BOTÃO INTELIGENTE)
+ */
+function submitReservationViaWhatsApp() {
+  const name = document.getElementById("userName").value.trim();
+  const phone = document.getElementById("userPhone").value.trim();
+
+  if (!name) {
+    alert("Por favor, digite seu Nome ou Nickname no formulário.");
+    document.getElementById("userName").focus();
+    return;
+  }
+
+  if (userSelectedTickets.length === 0) {
+    alert("Por favor, clique e selecione pelo menos 1 número disponível na grade.");
+    return;
+  }
+
+  const count = userSelectedTickets.length;
+  const totalVal = (count * portalDB.unitValue).toFixed(2);
+  const ticketsListStr = userSelectedTickets.join(", ");
+  const cleanAdminPhone = (portalDB.adminPhone || "61999487649").replace(/\D/g, '');
+
+  const msg = 
+`*SOLICITAÇÃO DE RESERVA - AÇÃO SOLIDÁRIA*
+=========================================
+*Certame:* ${portalDB.certame}
+*Beneficiário:* ${portalDB.beneficiario}
+*Participante:* ${name}
+*WhatsApp:* ${phone || 'Não informado'}
+
+*Ponto(s) Escolhido(s):* [ ${ticketsListStr} ]
+*Quantidade:* ${count} bilhete(s)
+*Valor Unitário:* R$ ${portalDB.unitValue.toFixed(2)}
+*TOTAL DA CONTRIBUIÇÃO:* R$ ${totalVal}
+
+*Chave PIX Oficial de Pagamento:*
+${portalDB.pixKey} (${portalDB.pixTitular})
+=========================================
+Olá, coordenador! Enviei a solicitação dos números acima pelo portal. Aguardo a confirmação e o envio do bilhete oficial!`;
+
+  let waTarget = cleanAdminPhone;
+  if (waTarget.length === 10 || waTarget.length === 11) {
+    waTarget = '55' + waTarget;
+  }
+
+  const finalUrl = `https://wa.me/${waTarget}?text=${encodeURIComponent(msg)}`;
+  window.open(finalUrl, '_blank');
+}
+
+/**
+ * PAINEL ADMINISTRATIVO (SENHA: rfb2026)
+ */
+function openAdminModal() {
+  document.getElementById("adminModal").style.display = "flex";
+  document.getElementById("adminPasswordInput").value = "";
+  document.getElementById("adminAuthSection").style.display = "block";
+  document.getElementById("adminSettingsSection").style.display = "none";
+  document.getElementById("adminPasswordInput").focus();
+}
+
+function closeAdminModal() {
+  document.getElementById("adminModal").style.display = "none";
+}
+
+function verifyAdminPassword() {
+  const pwd = document.getElementById("adminPasswordInput").value.trim();
+  if (pwd === "rfb2026") {
+    document.getElementById("adminAuthSection").style.display = "none";
+    document.getElementById("adminSettingsSection").style.display = "block";
+    loadSettingsIntoForm();
+  } else {
+    alert("Senha administrativa incorreta!");
+    document.getElementById("adminPasswordInput").value = "";
+  }
+}
+
+function loadSettingsIntoForm() {
+  document.getElementById("cfgCertameName").value = portalDB.certame;
+  document.getElementById("cfgBeneficiario").value = portalDB.beneficiario;
+  document.getElementById("cfgPrize").value = portalDB.prize;
+  document.getElementById("cfgUnitValue").value = portalDB.unitValue;
+  document.getElementById("cfgTotalNumbers").value = portalDB.totalNumbers;
+  document.getElementById("cfgAdminPhone").value = portalDB.adminPhone;
+  document.getElementById("cfgDrawMethod").value = portalDB.drawMethod;
+  document.getElementById("cfgDrawDate").value = portalDB.drawDate;
+  document.getElementById("cfgPixKey").value = portalDB.pixKey;
+  document.getElementById("cfgPixTitular").value = portalDB.pixTitular;
+}
+
+function saveAdminSettings() {
+  const newQty = parseInt(document.getElementById("cfgTotalNumbers").value, 10);
+  const oldQty = portalDB.totalNumbers;
+
+  portalDB.certame = document.getElementById("cfgCertameName").value.trim() || DEFAULT_PORTAL_CONFIG.certame;
+  portalDB.beneficiario = document.getElementById("cfgBeneficiario").value.trim() || DEFAULT_PORTAL_CONFIG.beneficiario;
+  portalDB.prize = document.getElementById("cfgPrize").value.trim() || DEFAULT_PORTAL_CONFIG.prize;
+  portalDB.unitValue = parseFloat(document.getElementById("cfgUnitValue").value) || 10;
+  portalDB.adminPhone = document.getElementById("cfgAdminPhone").value.replace(/\D/g, '') || "61999487649";
+  portalDB.drawMethod = document.getElementById("cfgDrawMethod").value;
+  portalDB.drawDate = document.getElementById("cfgDrawDate").value;
+  portalDB.pixKey = document.getElementById("cfgPixKey").value.trim() || "61999487649";
+  portalDB.pixTitular = document.getElementById("cfgPixTitular").value.trim() || "Carlos Alberto Reis";
+
+  if (newQty !== oldQty && newQty >= 10 && newQty <= 9999) {
+    if (confirm(`Alterar a série de ${oldQty} para ${newQty} números reconfigurará a grade. Deseja aplicar?`)) {
+      portalDB.totalNumbers = newQty;
+      initTicketsStatus(newQty);
+      userSelectedTickets = [];
+    }
+  }
+
+  saveLocal();
+  updatePublicDisplay();
+  renderPublicGrid();
+  closeAdminModal();
+  alert("Configurações do portal salvas e atualizadas com sucesso!");
+}
+
+/**
+ * SINCRONIZAÇÃO COM O BACKUP DO SISTEMA OFICIAL
+ */
+function syncWithOfficialBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const officialDB = JSON.parse(e.target.result);
+      if (!officialDB.tickets) throw new Error("JSON sem tickets");
+
+      let updatedCount = 0;
+      Object.keys(officialDB.tickets).forEach(num => {
+        if (portalDB.ticketsStatus.hasOwnProperty(num)) {
+          portalDB.ticketsStatus[num] = officialDB.tickets[num].status;
+          updatedCount++;
+        }
+      });
+
+      // Se o backup tiver informações do certame, sincroniza
+      if (officialDB.certame) portalDB.certame = officialDB.certame;
+      if (officialDB.unitValue) portalDB.unitValue = officialDB.unitValue;
+      if (officialDB.pixKey) portalDB.pixKey = officialDB.pixKey;
+
+      saveLocal();
+      updatePublicDisplay();
+      renderPublicGrid();
+      alert(`Sincronização concluída! ${updatedCount} pontos foram atualizados conforme a base oficial.`);
+    } catch(err) {
+      alert("Erro ao ler backup: verifique se selecionou o arquivo .json oficial correto.");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportPortalConfig() {
+  const blob = new Blob([JSON.stringify(portalDB, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `config_portal_rifa_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function resetPortalNumbers() {
+  if (confirm("Deseja realmente redefinir todos os pontos para 'DISPONÍVEL'?")) {
+    initTicketsStatus(portalDB.totalNumbers);
+    userSelectedTickets = [];
+    saveLocal();
+    renderPublicGrid();
+    alert("Todos os números voltaram ao status Disponível.");
+  }
+}
+
+// Inicia aplicação
+window.onload = initPortal;
+</script>
+</body>
+</html>
