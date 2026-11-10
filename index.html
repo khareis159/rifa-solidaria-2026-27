@@ -1,579 +1,1112 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Oficial e Formulário de Participação - Ação Entre Amigos</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎟️</text></svg>">
-  <style>
-    :root {
-      --bg: #f8fafc;
-      --surface: #ffffff;
-      --text: #0f172a;
-      --text-muted: #64748b;
-      --primary: #0284c7;
-      --primary-hover: #0369a1;
-      --border: #cbd5e1;
-      --disp: #22c55e;
-      --resv: #eab308;
-      --pago: #ef4444;
-      --selected: #6366f1;
-      --wa-green: #25d366;
-      --wa-hover: #1ebd5a;
-      --card-shadow: 0 4px 6px -1px rgba(0,0,0,0.07);
-    }
-
-    [data-theme="dark"] {
-      --bg: #0b1120;
-      --surface: #1e293b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --primary: #38bdf8;
-      --primary-hover: #0ea5e9;
-      --border: #334155;
-      --card-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 15px; }
-    .container { max-width: 1050px; margin: 0 auto; }
-
-    header { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-    h1 { font-size: 1.35rem; color: var(--primary); }
-    .header-btns { display: flex; gap: 8px; align-items: center; }
-
-    .btn { padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-    .btn:hover { filter: brightness(0.95); }
-    .btn-primary { background: var(--primary); color: #fff; border: none; }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-wa { background: var(--wa-green); color: #fff; border: none; font-size: 0.95rem; padding: 12px 20px; }
-    .btn-wa:hover { background: var(--wa-hover); }
-    .btn-danger { background: #fee2e2; color: #b91c1c; border-color: #f87171; }
-    .btn-admin { background: #e0e7ff; color: #4338ca; border-color: #c7d2fe; }
-
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: var(--card-shadow); }
-    .hero-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-top: 10px; }
-    
-    /* GRADE DE PONTOS */
-    .filter-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
-    .legend { display: flex; gap: 12px; align-items: center; font-size: 0.85rem; flex-wrap: wrap; }
-    .dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
-    .tickets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); gap: 8px; max-height: 420px; overflow-y: auto; padding: 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; }
-    .ticket { padding: 10px 2px; border-radius: 6px; text-align: center; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: 1px solid transparent; user-select: none; }
-    .ticket.disponivel { background: rgba(34, 197, 94, 0.15); color: #15803d; border-color: #22c55e; }
-    .ticket.reservado { background: rgba(234, 179, 8, 0.2); color: #a16207; border-color: #eab308; cursor: not-allowed; opacity: 0.7; }
-    .ticket.pago { background: rgba(239, 68, 68, 0.15); color: #b91c1c; border-color: #ef4444; cursor: not-allowed; opacity: 0.7; }
-    .ticket.user-selected { background: var(--selected) !important; color: #fff !important; border-color: #4338ca !important; transform: scale(1.08); box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4); }
-
-    /* FORMULÁRIO DO PARTICIPANTE */
-    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
-    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    input, select, textarea { padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 0.9rem; }
-    
-    .cart-summary { background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--selected); border-radius: 8px; padding: 15px; margin: 15px 0; }
-    .pix-box { background: rgba(2, 132, 199, 0.08); border: 1px dashed var(--primary); padding: 14px; border-radius: 6px; margin: 15px 0; }
-    .disclaimer-box { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; padding: 12px 16px; border-radius: 0 6px 6px 0; font-size: 0.85rem; margin-top: 15px; }
-
-    /* MODAL DE ADMIN */
-    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 15px; }
-    .modal-content { background: var(--surface); width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; border-radius: 10px; padding: 25px; border: 1px solid var(--border); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-
-    footer { text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 30px; padding: 20px 0; border-top: 1px solid var(--border); }
-  </style>
-</head>
-<body data-theme="light">
-
-<div class="container">
-  <header>
-    <div>
-      <h1 id="pubCertameTitle">Ação Solidária Entre Amigos</h1>
-      <small style="color:var(--text-muted)">Portal de Participação e Reserva Transparente</small>
-    </div>
-    <div class="header-btns">
-      <button class="btn" onclick="toggleTheme()" id="themeBtn">🌓 Tema</button>
-      <button class="btn btn-admin" onclick="openAdminModal()">🔒 Painel Admin</button>
-    </div>
-  </header>
-
-  <!-- PAINEL DE TRANSPARÊNCIA DA CAUSA -->
-  <div class="card">
-    <h2 style="font-size:1.15rem; color:var(--primary); margin-bottom:8px;">Objetivo e Regras do Certame Beneficente</h2>
-    <p id="pubDescription" style="font-size:0.9rem; color:var(--text-muted); margin-bottom:12px;">
-      Esta iniciativa comunitária destina 100% de seus recursos arrecadados para o amparo e despesas essenciais do beneficiário indicado.
-    </p>
-
-    <div class="hero-info">
-      <div><strong>Beneficiário / Causa:</strong> <span id="pubBeneficiario">--</span></div>
-      <div><strong>Premiação:</strong> <span id="pubPrize">--</span></div>
-      <div><strong>Valor do Ponto:</strong> <span style="color:#16a34a; font-weight:bold; font-size:1.1rem;">R$ <span id="pubUnitValue">0,00</span></span></div>
-      <div><strong>Data da Extração:</strong> <span id="pubDrawDate" style="font-weight:600;">--</span></div>
-      <div><strong>Critério de Sorteio:</strong> <span id="pubDrawMethod" style="color:var(--primary); font-weight:bold;">--</span></div>
-      <div><strong>Total de Pontos na Série:</strong> <span id="pubTotalNumbers">--</span></div>
-    </div>
-
-    <div class="pix-box">
-      <strong>Chave PIX Oficial de Apoio:</strong> <span id="pubPixKey" style="font-family:monospace; font-weight:bold; font-size:1rem;">61999487649</span><br>
-      <strong>Titular da Conta:</strong> <span id="pubPixTitular">Carlos Alberto Reis</span>
-    </div>
-  </div>
-
-  <!-- GRADE DE ESCOLHA DOS PONTOS -->
-  <div class="card">
-    <div class="filter-bar">
-      <div class="legend">
-        <strong>Legenda:</strong>
-        <span><span class="dot" style="background:var(--disp)"></span> Disponível (Clique p/ Escolher)</span>
-        <span><span class="dot" style="background:var(--selected)"></span> Selecionado por Você</span>
-        <span><span class="dot" style="background:var(--resv)"></span> Reservado</span>
-        <span><span class="dot" style="background:var(--pago)"></span> Confirmado (Pago)</span>
-      </div>
-      <div>
-        <button class="btn" style="font-size:0.75rem; padding:4px 8px;" onclick="clearUserSelection()">Desmarcar Todos</button>
-      </div>
-    </div>
-
-    <div class="tickets-grid" id="publicGridContainer"></div>
-  </div>
-
-  <!-- FORMULÁRIO DE ENVIO E RESERVA DO PARTICIPANTE -->
-  <div class="card">
-    <h2 style="font-size:1.15rem; color:var(--primary); margin-bottom:10px;">Formulário de Adesão e Solicitação de Pontos</h2>
-    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:15px;">
-      Selecione os números desejados na grade acima, informe seu nome/nick e envie sua solicitação diretamente para a coordenação do certame.
-    </p>
-
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
-      <div class="form-group">
-        <label>Seu Nome Completo ou Nickname:</label>
-        <input type="text" id="userName" placeholder="Ex.: Juliana Reis">
-      </div>
-      <div class="form-group">
-        <label>Seu WhatsApp com DDD:</label>
-        <input type="text" id="userPhone" placeholder="Ex.: 61998390725" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-      </div>
-    </div>
-
-    <!-- RESUMO DO CARRINHO DE PONTOS -->
-    <div class="cart-summary">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-        <div>
-          <strong>Números Escolhidos:</strong> <span id="dispSelectedNumbers" style="font-weight:bold; color:var(--selected); font-size:1rem;">Nenhum selecionado</span>
-        </div>
-        <div>
-          <strong>Quantidade:</strong> <span id="dispSelectedCount">0</span> bilhete(s)
-        </div>
-        <div>
-          <strong>Total em Real:</strong> <span style="font-size:1.2rem; font-weight:bold; color:#16a34a;">R$ <span id="dispSelectedTotal">0,00</span></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- BOTÃO OFICIAL DE DESPACHO PARA O WHATSAPP -->
-    <div style="text-align:center; margin-top:15px;">
-      <button class="btn btn-wa" onclick="submitReservationViaWhatsApp()">
-        📲 Enviar Pedido de Reserva pelo WhatsApp Oficial
-      </button>
-    </div>
-
-    <div class="disclaimer-box">
-      <strong>⚠️ AVISO DE TRANSPARÊNCIA:</strong> Este formulário gera uma <em>solicitação formal de reserva</em>. Para assegurar a idoneidade do certame e evitar bloqueios indevidos por terceiros, a confirmação definitiva da sua cota só é consolidada no sistema oficial após a validação do comprovante PIX pela coordenação.
-    </div>
-  </div>
-
-  <footer>
-    <p>&copy; 2026 Carlos Alberto Reis. Todos os direitos reservados.</p>
-    <p>Portal Distribuído GitHub Pages • Arquitetura Client-Side Segura • Integração WhatsApp</p>
-    <p>Chave PIX Oficial da Coordenação: <strong>61999487649</strong></p>
-  </footer>
-</div>
-
-<!-- MODAL ADMINISTRATIVO PROTEGIDO POR SENHA (rfb2026) -->
-<div class="modal-overlay" id="adminModal">
-  <div class="modal-content">
-    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:15px;">
-      <h3 style="color:var(--primary);">🔒 Painel de Configuração do Certame (Admin)</h3>
-      <button class="btn btn-danger" onclick="closeAdminModal()">✕ Fechar</button>
-    </div>
-
-    <!-- TELA 1: LOGIN DE SENHA -->
-    <div id="adminAuthSection">
-      <div class="form-group">
-        <label>Digite a Senha de Acesso Administrativo:</label>
-        <input type="password" id="adminPasswordInput" placeholder="Senha do painel">
-      </div>
-      <button class="btn btn-primary" onclick="verifyAdminPassword()" style="width:100%; margin-top:8px;">Acessar Configurações</button>
-    </div>
-
-    <!-- TELA 2: CONFIGURAÇÕES LIBERADAS -->
-    <div id="adminSettingsSection" style="display:none;">
-      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px;">
-        <div class="form-group">
-          <label>Nome do Certame / Ação:</label>
-          <input type="text" id="cfgCertameName">
-        </div>
-        <div class="form-group">
-          <label>Beneficiário / Causa Social:</label>
-          <input type="text" id="cfgBeneficiario">
-        </div>
-        <div class="form-group">
-          <label>Prêmio / Premiação:</label>
-          <input type="text" id="cfgPrize">
-        </div>
-        <div class="form-group">
-          <label>Valor de Cada Ponto (R$):</label>
-          <input type="number" id="cfgUnitValue" step="0.50" min="1">
-        </div>
-        <div class="form-group">
-          <label>Quantidade de Pontos (Série Livre):</label>
-          <input type="number" id="cfgTotalNumbers" min="10" max="9999" placeholder="Ex: 10, 20, 100, 1000">
-        </div>
-        <div class="form-group">
-          <label>WhatsApp do Admin (Destino das Reservas):</label>
-          <input type="text" id="cfgAdminPhone" placeholder="Ex: 61999487649">
-        </div>
-        <div class="form-group">
-          <label>Critério de Sorteio:</label>
-          <select id="cfgDrawMethod">
-            <option value="federal">Loteria Federal da Caixa</option>
-            <option value="automatico">Sorteador Criptográfico no App</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Data e Hora Prevista da Apuração:</label>
-          <input type="datetime-local" id="cfgDrawDate">
-        </div>
-        <div class="form-group">
-          <label>Chave PIX Oficial:</label>
-          <input type="text" id="cfgPixKey">
-        </div>
-        <div class="form-group">
-          <label>Titular da Chave PIX:</label>
-          <input type="text" id="cfgPixTitular">
-        </div>
-      </div>
-
-      <!-- ÁREA DE SINCRONIZAÇÃO COM O SISTEMA OFICIAL -->
-      <div style="margin-top:18px; padding:14px; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
-        <h4 style="color:var(--primary); margin-bottom:8px;">🔄 Sincronização com o Sistema Oficial de Rifas</h4>
-        <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:10px;">
-          Carregue o arquivo <code>backup_rifa_*.json</code> gerado pelo app oficial para marcar automaticamente como <strong>Reservado</strong> ou <strong>Pago</strong> os pontos já preenchidos.
-        </p>
-        <input type="file" id="importJsonOfficial" accept=".json" onchange="syncWithOfficialBackup(event)">
-      </div>
-
-      <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveAdminSettings()">💾 Salvar Configurações Públicas</button>
-        <button class="btn" onclick="exportPortalConfig()">📥 Baixar Configuração (JSON)</button>
-        <button class="btn btn-danger" onclick="resetPortalNumbers()">⚠️ Limpar Todos os Pontos</button>
-      </div>
-    </div>
-  </div>
-</div>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="color-scheme" content="light dark">
+<title>Rifa — Portal de participação</title>
+<meta name="description" content="Rifa / ação entre amigos com livro-razão verificável, sorteio transparente e bilhetes gráficos em alta resolução. © Carlos Alberto Reis 2026.">
 <script>
-/**
- * ARQUITETURA DE ESTADO DO FORMULÁRIO INTELIGENTE
- */
-const DEFAULT_PORTAL_CONFIG = {
-  certame: "Ação Solidária Emergencial",
-  beneficiario: "Apoio Familiar e Saúde",
-  prize: "Prêmio Oficial Solidário",
-  unitValue: 10.0,
-  totalNumbers: 100,
-  adminPhone: "61999487649",
-  drawMethod: "federal",
-  drawDate: "2026-11-28T19:00",
-  pixKey: "61999487649",
-  pixTitular: "Carlos Alberto Reis",
-  ticketsStatus: {} // Guarda o status de cada número: 'disponivel', 'reservado', 'pago'
+(function(){var t=null;try{t=localStorage.getItem("rifa_portal_theme")}catch(e){}
+if(!t){t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"}
+document.documentElement.setAttribute("data-theme",t)})();
+</script>
+<style>
+:root{
+  --bg:#f3f6f5;--surface:#ffffff;--surface2:#eaf0ee;--text:#0f172a;--muted:#475569;--accent:#047857;--accent-h:#065f46;--on-accent:#ffffff;--accent-soft:#d1fae5;
+  --border:#b8c4c0;--danger:#b91c1c;--danger-soft:#fee2e2;--warn:#7c2d12;--warn-soft:#fef3c7;--info:#1e3a8a;--info-soft:#dbeafe;
+  --tk-livre-bg:#ffffff;--tk-livre-fg:#0f172a;--tk-livre-bd:#334155;--tk-res-bg:#fde68a;--tk-res-fg:#451a03;--tk-res-bd:#92400e;--tk-pago-bg:#047857;--tk-pago-fg:#ffffff;--tk-pago-bd:#064e3b;--tk-prem-bg:#fbbf24;--tk-prem-fg:#111827;--tk-prem-bd:#78350f;--tk-sel:#1d4ed8;
+  --shadow:0 1px 2px rgba(15,23,42,.08),0 2px 8px rgba(15,23,42,.06);--r:10px;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+[data-theme="dark"]{
+  --bg:#0b1411;--surface:#13201b;--surface2:#1b2b25;--text:#f1f5f9;--muted:#b4c3bd;--accent:#34d399;--accent-h:#6ee7b7;--on-accent:#04251a;--accent-soft:#0d3b2c;
+  --border:#3a5149;--danger:#fca5a5;--danger-soft:#451a1a;--warn:#fcd34d;--warn-soft:#3a2e0b;--info:#bfdbfe;--info-soft:#13284a;
+  --tk-livre-bg:#13201b;--tk-livre-fg:#f1f5f9;--tk-livre-bd:#94a3b8;--tk-res-bg:#78350f;--tk-res-fg:#fef3c7;--tk-res-bd:#fcd34d;--tk-pago-bg:#34d399;--tk-pago-fg:#04251a;--tk-pago-bd:#a7f3d0;--tk-prem-bg:#fbbf24;--tk-prem-fg:#111827;--tk-prem-bd:#fef3c7;--tk-sel:#60a5fa;
+  --shadow:0 1px 3px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+h1,h2,h3{margin:0 0 .5rem;line-height:1.25}h1{font-size:1.2rem}h2{font-size:1.05rem}h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:.9rem}
+p{margin:.25rem 0 .6rem}a{color:var(--accent)}
+.skip{position:absolute;left:-999px}.skip:focus{left:8px;top:8px;background:var(--surface);padding:.5rem;z-index:99}
+:focus-visible{outline:3px solid var(--tk-sel);outline-offset:2px}
+button,input,select,textarea{font:inherit;color:inherit}
+button,.btnlink{cursor:pointer;border:1px solid var(--border);background:var(--surface);padding:.5rem .9rem;border-radius:var(--r);min-height:40px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;color:var(--text)}
+button:hover,.btnlink:hover{border-color:var(--accent)}button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent);font-weight:700}button.primary:hover{background:var(--accent-h)}
+button.danger{border-color:var(--danger);color:var(--danger);background:transparent}
+button.ghost{background:transparent}button.sm{min-height:32px;padding:.2rem .6rem;font-size:.82rem}
+button.link{border:0;background:none;color:var(--accent);padding:.2rem;min-height:0;text-decoration:underline}
+input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.5rem .65rem;min-height:40px}
+input.bad{border-color:var(--danger);box-shadow:0 0 0 2px var(--danger-soft)}
+input[type=checkbox]{width:auto;min-height:0}
+label.inline{display:inline-flex;gap:.4rem;align-items:center;text-transform:none;font-size:.9rem;color:var(--text);font-weight:600}
+details.tec{margin-top:.6rem}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+label{display:block;font-size:.76rem;font-weight:700;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase;letter-spacing:.04em}
+.hint{font-size:.8rem;color:var(--muted);margin-top:.2rem}
+.mono{font-family:var(--mono)}.brk{word-break:break-all;font-size:.78rem}.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.muted{color:var(--muted)}
+.field{margin-bottom:.6rem}
+.app-header{display:flex;gap:.75rem;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:.6rem 1rem;background:var(--surface);border-bottom:1px solid var(--border)}
+.brand{display:flex;gap:.6rem;align-items:center}.brand-mark{width:40px;height:40px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:900;font-size:1.3rem}
+.brand small{display:block;color:var(--muted);font-size:.74rem}
+.opbox{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+#nav{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.tabs{display:flex;gap:.25rem;overflow-x:auto;padding:.4rem 1rem 0}
+.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;white-space:nowrap;padding:.5rem .8rem}
+.tabs button[aria-selected=true]{border-bottom-color:var(--accent);color:var(--accent);font-weight:800}
+main{flex:1;width:100%;max-width:1240px;margin:0 auto;padding:1rem}
+.app-footer{padding:1rem;border-top:1px solid var(--border);background:var(--surface);font-size:.8rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.5rem 1rem;justify-content:space-between}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.grid{display:grid;gap:.75rem}.g2{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.g4{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}.row.between{justify-content:space-between}.grow{flex:1;min-width:180px}
+.kpi{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:.7rem .9rem}.kpi .l{font-size:.7rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.kpi .v{font-size:1.3rem;font-weight:800;font-variant-numeric:tabular-nums;word-break:break-word}.kpi .s{font-size:.78rem;color:var(--muted)}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r)}.tw{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:.86rem}th,td{padding:.45rem .6rem;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+thead th{background:var(--surface2);font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);white-space:nowrap}
+thead th button{all:unset;cursor:pointer}tbody tr:hover{background:var(--surface2)}tr.click{cursor:pointer}
+tr.void td{text-decoration:line-through;color:var(--muted)}td.empty{text-align:center;color:var(--muted);padding:1rem}
+.pager{display:flex;gap:.5rem;align-items:center;justify-content:flex-end;padding:.4rem 0;font-size:.82rem;flex-wrap:wrap}
+.chip{display:inline-block;padding:.05rem .55rem;border-radius:99px;font-size:.74rem;font-weight:800;border:1px solid transparent;white-space:nowrap}
+.chip.ok{background:var(--accent-soft);color:#064e3b;border-color:var(--accent)}[data-theme=dark] .chip.ok{color:#a7f3d0}
+.chip.warn{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}.chip.bad{background:var(--danger-soft);color:var(--danger);border-color:var(--danger)}.chip.info{background:var(--info-soft);color:var(--info);border-color:var(--info)}.chip.off{background:var(--surface2);color:var(--muted);border-color:var(--border)}
+.alert{padding:.6rem .8rem;border-radius:var(--r);border:1px solid;margin:.5rem 0;font-size:.9rem}
+.alert.ok{background:var(--accent-soft);border-color:var(--accent);color:#064e3b}[data-theme=dark] .alert.ok{color:#d1fae5}
+.alert.warn{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}.alert.bad{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}.alert.info{background:var(--info-soft);border-color:var(--info);color:var(--info)}
+#toasts{position:fixed;right:1rem;bottom:1rem;display:flex;flex-direction:column;gap:.5rem;z-index:2000;max-width:min(92vw,460px)}
+.toast{padding:.7rem .9rem;border-radius:var(--r);background:var(--surface);border:1px solid var(--border);box-shadow:0 6px 24px rgba(0,0,0,.3);border-left:6px solid var(--accent)}
+.toast.bad{border-left-color:var(--danger);font-weight:600}
+dialog{border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:0;width:min(96vw,680px);max-height:92vh;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.dh{padding:.8rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.db{padding:1rem;overflow:auto;max-height:68vh}.df{padding:.8rem 1rem;border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}
+dl.kv{display:grid;grid-template-columns:minmax(120px,220px) 1fr;gap:.3rem .8rem;margin:.4rem 0 .8rem}dl.kv dt{color:var(--muted);font-size:.8rem;font-weight:700}dl.kv dd{margin:0;word-break:break-word}
+.pre{white-space:pre-wrap;word-break:break-all;font-family:var(--mono);font-size:.76rem;background:var(--surface2);padding:.5rem;border-radius:8px;border:1px dashed var(--border);margin:0}
+.bar{height:12px;border-radius:99px;background:var(--surface2);overflow:hidden;border:1px solid var(--border);margin-top:.6rem}.bar>i{display:block;height:100%;background:var(--accent)}
+.qrbox{background:#fff;padding:6px;border-radius:10px;display:inline-block;line-height:0;border:1px solid var(--border)}
+.pixbox{display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;margin-top:.6rem}
+.live{background:var(--accent-soft);border-radius:8px;padding:.45rem .6rem;font-size:.86rem;margin:.5rem 0;color:#064e3b;border:1px solid var(--accent)}[data-theme=dark] .live{color:#d1fae5}
+#banner:not(:empty){padding:.5rem 1rem 0;max-width:1240px;margin:0 auto;width:100%}
+/* ---------- grade de bilhetes (alto contraste, status por forma + cor) ---------- */
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:7px;margin-top:.4rem}
+.tk{position:relative;min-height:56px;border-radius:12px;font-weight:800;font-variant-numeric:tabular-nums;border:2px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.2rem;line-height:1.1;font-size:1.05rem}
+.tk .ic{font-size:.8rem;min-height:.9rem;font-weight:900}
+.tk.livre{background:var(--tk-livre-bg);color:var(--tk-livre-fg);border-color:var(--tk-livre-bd)}
+.tk.reservado{background:var(--tk-res-bg);color:var(--tk-res-fg);border:2px dashed var(--tk-res-bd)}
+.tk.pago{background:var(--tk-pago-bg);color:var(--tk-pago-fg);border-color:var(--tk-pago-bd)}
+.tk.premio{background:var(--tk-prem-bg);color:var(--tk-prem-fg);border:3px double var(--tk-prem-bd)}
+.tk.sel{outline:4px solid var(--tk-sel);outline-offset:1px;transform:scale(1.05);z-index:1}
+.tk.sel::before{content:"☑";position:absolute;top:1px;left:4px;font-size:.75rem}
+.tk.mini{min-height:0;width:30px;height:26px;display:inline-flex;font-size:.8rem;border-radius:7px;vertical-align:middle;margin-right:.35rem;pointer-events:none}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.84rem;margin:.2rem 0 .4rem}.lg{display:inline-flex;align-items:center}
+.passo h2{margin:0}.passo .row{margin-bottom:.4rem}
+.prem{display:flex;gap:.8rem;align-items:flex-start;border:1px solid var(--border);border-radius:var(--r);padding:.7rem;margin-bottom:.6rem;background:var(--surface2);flex-wrap:wrap}.prem-n{font-weight:900;font-size:1.4rem;color:var(--accent);min-width:2.2rem}
+.regul h3{margin-top:.9rem;color:var(--text)}.regul p{max-width:78ch}
+.winner{display:flex;gap:1rem;align-items:center}.wn{font-size:3rem;font-weight:900;background:var(--tk-prem-bg);color:var(--tk-prem-fg);border-radius:16px;padding:.2rem 1rem;border:3px double var(--tk-prem-bd)}
+.tickets{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:1rem}.tickets figure{margin:0}
+.tkcanvas{width:100%;height:auto;border-radius:16px;box-shadow:var(--shadow);display:block;margin-bottom:.4rem;background:#fff}
+details.anular{margin-top:1rem;border-top:1px dashed var(--border);padding-top:.6rem}details summary{cursor:pointer;font-weight:700}
+@media (max-width:700px){main{padding:.6rem}.card{padding:.8rem}.grade{grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}dl.kv{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* ---------- impressão A4 ---------- */
+#print-zone{display:none}
+@page{size:A4;margin:12mm}
+@media print{
+  body{background:#fff!important;color:#000!important;display:block}
+  .no-print,header,nav,main,footer,#toasts,dialog,#banner,.skip{display:none!important}
+  #print-zone{display:block!important}
+  .pp{font:11pt/1.35 "Times New Roman",serif;color:#000}
+  .pp h1{font-size:15pt;margin:0 0 2mm;color:#000}.pp h2{font-size:11pt;margin:4mm 0 1mm;color:#000}.pp p{color:#000}.pp .meta{font-size:9pt;color:#222}
+  .pp table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:2mm 0}.pp th,.pp td{border:1px solid #333;padding:1.2mm 1.6mm;color:#000;background:none}.pp th{background:#e8e8e8;font-size:8.5pt;text-align:left}
+  .pp thead{display:table-header-group}.pp tr{break-inside:avoid}.pp td.num,.pp th.num{text-align:right}
+  .pp .via{border:1px solid #000;padding:5mm;margin-bottom:6mm;break-inside:avoid}
+  .pp th[scope=row]{width:38%;background:#f2f2f2}
+  .pp .hash{font:7.5pt/1.3 monospace;word-break:break-all;border:1px dashed #000;padding:1.5mm;margin-top:2mm}
+  .pp .sig{display:flex;justify-content:space-between;gap:8mm;margin-top:12mm;font-size:9pt}.pp .sig div{border-top:1px solid #000;flex:1;text-align:center;padding-top:1mm}
+  .pp .foot{font-size:8pt;margin-top:3mm;color:#222}
+  .pp .bimg{width:100%;height:auto;display:block;margin:0 0 5mm;break-inside:avoid;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.premlist{margin:.2rem 0 .6rem 1.2rem;padding:0}.premlist li{margin:.15rem 0}
+.cart{margin:.6rem 0}
+.tk:disabled{opacity:1;cursor:default}
+
+</style>
+</head>
+<body>
+<a class="skip no-print" href="#view">Ir para o conteúdo</a>
+<header class="app-header no-print" id="hdr"></header>
+<nav class="no-print" id="nav" aria-label="Seções"></nav>
+<div id="banner" class="no-print"></div>
+<main id="view" tabindex="-1"></main>
+<footer class="app-footer no-print">
+  <div>© Carlos Alberto Reis 2026 · Portal público · livro verificável no seu navegador</div>
+  <div><button class="link" id="btn-apoio" type="button">Apoio e sustentabilidade · PIX 61999487649</button></div>
+</footer>
+<div id="toasts" class="no-print" aria-live="polite" role="status"></div>
+<section id="print-zone" aria-hidden="true"></section>
+<script>
+/* Rifa — núcleo 1: utilidades, dinheiro exato, unidades, SHA-256 (WASM/JS), canonização, Merkle */
+var RIFA = (typeof RIFA !== "undefined") ? RIFA : {};
+(function (C) {
+"use strict";
+const E = (m) => new Error(m);
+C.E = E;
+
+/* ---------- texto e datas ---------- */
+C.esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+C.utf8 = (s) => new TextEncoder().encode(String(s).normalize("NFC"));
+C.isDate = (s) => {
+  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(s + "T00:00:00Z");
+  return !isNaN(d) && d.toISOString().slice(0, 10) === s;
+};
+C.isMonth = (s) => typeof s === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(s);
+C.isIso = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(s) && !isNaN(new Date(s));
+C.todayLocal = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+C.fmtDate = (s) => (C.isDate(s) ? s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(0, 4) : (s || ""));
+C.fmtMonth = (s) => (C.isMonth(s) ? s.slice(5, 7) + "/" + s.slice(0, 4) : (s || ""));
+C.fmtIso = (s) => { const d = new Date(s); return isNaN(d) ? String(s) : d.toLocaleString("pt-BR"); };
+C.daysBetween = (a, b) => Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86400000);
+C.addDays = (s, n) => new Date(Date.parse(s + "T00:00:00Z") + n * 86400000).toISOString().slice(0, 10);
+C.addMonths = (m, n) => { const y = +m.slice(0, 4), mo = +m.slice(5, 7) - 1 + n; const yy = y + Math.floor(mo / 12), mm = ((mo % 12) + 12) % 12; return yy + "-" + String(mm + 1).padStart(2, "0"); };
+
+/* ---------- números decimais exatos (sem float) ---------- */
+C.parseDec = function (s, scale, opts) {
+  opts = opts || {};
+  s = String(s == null ? "" : s).trim().replace(/\s/g, "").replace(/^R\$/i, "");
+  if (s === "") throw E("Valor vazio");
+  let neg = false;
+  if (s[0] === "-") { if (!opts.neg) throw E("Valor negativo não permitido"); neg = true; s = s.slice(1); }
+  else if (s[0] === "+") s = s.slice(1);
+  let ip, fp = "";
+  if (s.includes(",")) {
+    const p = s.split(",");
+    if (p.length !== 2) throw E("Número inválido: " + s);
+    if (!/^(\d+|\d{1,3}(\.\d{3})+)$/.test(p[0] || "0")) throw E("Número inválido: " + s);
+    ip = p[0].replace(/\./g, ""); fp = p[1];
+  } else if (s.includes(".")) {
+    if (/^[1-9]\d{0,2}(\.\d{3})+$/.test(s)) ip = s.replace(/\./g, "");
+    else { const p = s.split("."); if (p.length !== 2) throw E("Número inválido: " + s); ip = p[0]; fp = p[1]; }
+  } else ip = s;
+  if (ip === "") ip = "0";
+  if (!/^\d+$/.test(ip) || (fp !== "" && !/^\d+$/.test(fp))) throw E("Número inválido: " + s);
+  let digits = fp, extra = "";
+  if (fp.length > scale) { digits = fp.slice(0, scale); extra = fp.slice(scale); } else digits = fp.padEnd(scale, "0");
+  let v = BigInt(ip + digits);
+  if (extra && extra[0] >= "5") v += 1n;
+  return neg ? -v : v;
+};
+C.roundDiv = function (n, d) {
+  if (d <= 0n) throw E("divisão inválida");
+  const neg = n < 0n; const a = neg ? -n : n;
+  let q = a / d; const r = a % d;
+  if (r * 2n >= d) q += 1n;
+  return neg ? -q : q;
+};
+C.fmtDec = function (v, scale, minFrac) {
+  v = BigInt(v); const neg = v < 0n; if (neg) v = -v;
+  const s = v.toString().padStart(scale + 1, "0");
+  let ip = scale ? s.slice(0, -scale) : s, fp = scale ? s.slice(-scale) : "";
+  if (minFrac == null) minFrac = scale;
+  while (fp.length > minFrac && fp.endsWith("0")) fp = fp.slice(0, -1);
+  ip = ip.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return (neg ? "-" : "") + ip + (fp ? "," + fp : "");
+};
+C.fmtBRL = (c) => { c = BigInt(c); return (c < 0n ? "-R$ " : "R$ ") + C.fmtDec(c < 0n ? -c : c, 2, 2); };
+C.big = (s) => { if (typeof s === "bigint") return s; if (typeof s !== "string" || !/^-?\d+$/.test(s)) throw E("inteiro inválido: " + s); return BigInt(s); };
+C.nat = (s) => { const b = C.big(s); if (b < 0n) throw E("inteiro negativo: " + s); return b; };
+/* rateio por maior resto: Σ partes == total sempre */
+C.allocate = function (total, weights) {
+  total = BigInt(total);
+  const n = weights.length; if (!n) return [];
+  let W = weights.reduce((a, b) => a + BigInt(b), 0n);
+  const w = W === 0n ? weights.map(() => 1n) : weights.map(BigInt);
+  if (W === 0n) W = BigInt(n);
+  const neg = total < 0n; const T = neg ? -total : total;
+  const base = w.map((x) => (T * x) / W);
+  const rem = w.map((x, i) => ({ i, r: (T * x) % W }));
+  let left = T - base.reduce((a, b) => a + b, 0n);
+  rem.sort((a, b) => (a.r === b.r ? a.i - b.i : a.r > b.r ? -1 : 1));
+  for (let k = 0; left > 0n; k = (k + 1) % n, left--) base[rem[k].i] += 1n;
+  return neg ? base.map((x) => -x) : base;
 };
 
-let portalDB = {};
-let userSelectedTickets = []; // Array de pontos selecionados pelo participante
+/* ---------- SHA-256: WASM (primário) → JS puro (reserva); WebCrypto só para conferência cruzada ---------- */
+const K = new Uint32Array([
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+const H0 = new Uint32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
 
-function initPortal() {
-  const local = localStorage.getItem("portal_rifa_github_db");
-  if (local) {
-    try {
-      portalDB = JSON.parse(local);
-    } catch(e) {
-      portalDB = JSON.parse(JSON.stringify(DEFAULT_PORTAL_CONFIG));
+function blocksJS(st, buf, off, nb) {
+  const w = new Uint32Array(64);
+  const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let b = 0; b < nb; b++) {
+    const o = off + b * 64;
+    for (let t = 0; t < 16; t++) w[t] = (buf[o + t * 4] << 24) | (buf[o + t * 4 + 1] << 16) | (buf[o + t * 4 + 2] << 8) | buf[o + t * 4 + 3];
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
     }
-  } else {
-    portalDB = JSON.parse(JSON.stringify(DEFAULT_PORTAL_CONFIG));
-    initTicketsStatus(portalDB.totalNumbers);
-    saveLocal();
-  }
-  updatePublicDisplay();
-  renderPublicGrid();
-}
-
-function initTicketsStatus(qty) {
-  portalDB.ticketsStatus = {};
-  const padLen = qty > 1000 ? 4 : (qty > 100 ? 3 : 2);
-  for (let i = 0; i < qty; i++) {
-    const numStr = i.toString().padStart(padLen, '0');
-    portalDB.ticketsStatus[numStr] = "disponivel";
-  }
-}
-
-function saveLocal() {
-  localStorage.setItem("portal_rifa_github_db", JSON.stringify(portalDB));
-}
-
-function toggleTheme() {
-  const current = document.body.getAttribute("data-theme");
-  document.body.setAttribute("data-theme", current === "dark" ? "light" : "dark");
-}
-
-function updatePublicDisplay() {
-  document.getElementById("pubCertameTitle").innerText = portalDB.certame;
-  document.getElementById("pubBeneficiario").innerText = portalDB.beneficiario;
-  document.getElementById("pubPrize").innerText = portalDB.prize;
-  document.getElementById("pubUnitValue").innerText = portalDB.unitValue.toFixed(2);
-  document.getElementById("pubTotalNumbers").innerText = `${portalDB.totalNumbers} cotas`;
-  document.getElementById("pubPixKey").innerText = portalDB.pixKey;
-  document.getElementById("pubPixTitular").innerText = portalDB.pixTitular;
-
-  const dateObj = portalDB.drawDate ? new Date(portalDB.drawDate) : null;
-  document.getElementById("pubDrawDate").innerText = dateObj && !isNaN(dateObj) 
-    ? dateObj.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) 
-    : "Data a definir";
-
-  document.getElementById("pubDrawMethod").innerText = portalDB.drawMethod === "federal" 
-    ? "Loteria Federal (Caixa Econômica Federal)" 
-    : "Sorteio Digital Automático Auditável";
-}
-
-/**
- * GRADE DE ESCOLHA DO PARTICIPANTE
- */
-function renderPublicGrid() {
-  const container = document.getElementById("publicGridContainer");
-  container.innerHTML = "";
-
-  Object.keys(portalDB.ticketsStatus).sort().forEach(num => {
-    const status = portalDB.ticketsStatus[num];
-    const isSelected = userSelectedTickets.includes(num);
-
-    const div = document.createElement("div");
-    div.className = `ticket ${status} ${isSelected ? 'user-selected' : ''}`;
-    div.innerText = num;
-
-    if (status === "disponivel") {
-      div.onclick = () => toggleTicketSelection(num);
-    } else {
-      div.title = `Ponto ${num} está ${status.toUpperCase()} no sistema oficial.`;
+    let a = st[0], bb = st[1], c = st[2], d = st[3], e = st[4], f = st[5], g = st[6], h = st[7];
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25), ch = (e & f) ^ (~e & g);
+      const t1 = (h + S1 + ch + K[t] + w[t]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22), mj = (a & bb) ^ (a & c) ^ (bb & c);
+      const t2 = (S0 + mj) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
     }
+    st[0] = (st[0] + a) | 0; st[1] = (st[1] + bb) | 0; st[2] = (st[2] + c) | 0; st[3] = (st[3] + d) | 0;
+    st[4] = (st[4] + e) | 0; st[5] = (st[5] + f) | 0; st[6] = (st[6] + g) | 0; st[7] = (st[7] + h) | 0;
+  }
+}
+function tailBytes(u8, done) {
+  const rem = u8.length - done;
+  const total = rem + 1 + 8 <= 64 ? 64 : 128;
+  const t = new Uint8Array(total);
+  t.set(u8.subarray(done), 0); t[rem] = 0x80;
+  const bits = u8.length * 8, hi = Math.floor(bits / 4294967296), lo = bits >>> 0;
+  t[total - 8] = hi >>> 24; t[total - 7] = hi >>> 16; t[total - 6] = hi >>> 8; t[total - 5] = hi;
+  t[total - 4] = lo >>> 24; t[total - 3] = lo >>> 16; t[total - 2] = lo >>> 8; t[total - 1] = lo;
+  return t;
+}
+const toHex = (u8) => Array.from(u8, (b) => b.toString(16).padStart(2, "0")).join("");
+const fromHex = (h) => { if (!/^([0-9a-f]{2})*$/.test(h)) throw E("hex inválido"); const o = new Uint8Array(h.length / 2); for (let i = 0; i < o.length; i++) o[i] = parseInt(h.substr(i * 2, 2), 16); return o; };
+C.toHex = toHex; C.fromHex = fromHex;
+const stToBytes = (st) => { const o = new Uint8Array(32); for (let i = 0; i < 8; i++) { o[i * 4] = st[i] >>> 24; o[i * 4 + 1] = st[i] >>> 16; o[i * 4 + 2] = st[i] >>> 8; o[i * 4 + 3] = st[i]; } return o; };
 
-    container.appendChild(div);
+C.sha256JS = function (u8) {
+  const st = new Uint32Array(H0); const full = Math.floor(u8.length / 64);
+  blocksJS(st, u8, 0, full); const t = tailBytes(u8, full * 64); blocksJS(st, t, 0, t.length / 64);
+  return stToBytes(st);
+};
+let wasm = null; const CH = 1 << 20;
+C.sha256WASM = function (u8) {
+  const mem = new Uint8Array(wasm.memory.buffer), st = new Uint32Array(wasm.memory.buffer, 0, 8);
+  st.set(H0);
+  const full = Math.floor(u8.length / 64); let done = 0;
+  while (done < full) {
+    const nb = Math.min(CH / 64, full - done);
+    mem.set(u8.subarray(done * 64, (done + nb) * 64), 1024);
+    wasm.sha256_blocks(1024, nb); done += nb;
+  }
+  const t = tailBytes(u8, full * 64); mem.set(t, 1024); wasm.sha256_blocks(1024, t.length / 64);
+  return stToBytes(st);
+};
+C.engine = "js";
+C.initWasm = async function (b64) {
+  try {
+    const bin = typeof atob === "function" ? Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)) : new Uint8Array(Buffer.from(b64, "base64"));
+    const { instance } = await WebAssembly.instantiate(bin, {});
+    wasm = instance.exports;
+    new Uint32Array(wasm.memory.buffer, 64, 64).set(K);
+    const v = toHex(C.sha256WASM(C.utf8("abc")));
+    if (v !== "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad") throw E("WASM falhou no vetor");
+    C.engine = "wasm"; return true;
+  } catch (e) { wasm = null; C.engine = "js"; C.wasmError = String(e && e.message || e); return false; }
+};
+C.sha256 = (u8) => (wasm ? C.sha256WASM(u8) : C.sha256JS(u8));
+C.sha256Hex = (x) => toHex(C.sha256(typeof x === "string" ? C.utf8(x) : x));
+C.sha256Web = async (x) => toHex(new Uint8Array(await crypto.subtle.digest("SHA-256", typeof x === "string" ? C.utf8(x) : x)));
+C.concat = (...a) => { const n = a.reduce((s, x) => s + x.length, 0), o = new Uint8Array(n); let p = 0; for (const x of a) { o.set(x, p); p += x.length; } return o; };
+
+/* ---------- serialização canônica: só strings, objetos e listas ---------- */
+C.canon = function canon(v) {
+  if (typeof v === "string") return JSON.stringify(v.normalize("NFC"));
+  if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+  if (v && typeof v === "object") return "{" + Object.keys(v).filter((k) => v[k] !== undefined).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+  throw E("canon: tipo não permitido (" + typeof v + "); use strings");
+};
+C.DOMAIN = "RIFA\x1f1\x1f";
+C.genesis = () => C.sha256Hex("RIFA-GENESIS-v1");
+C.recBody = (r) => { const b = {}; for (const k of Object.keys(r)) if (k !== "hash" && k !== "hash_anterior") b[k] = r[k]; return b; };
+C.recHash = (prev, r) => C.sha256Hex(C.DOMAIN + prev + "\x1f" + C.canon(C.recBody(r)));
+
+/* ---------- Merkle (folha 0x00, nó 0x01, ímpar promovido) ---------- */
+C.merkleRoot = function (hexes) {
+  if (!hexes.length) return C.sha256Hex("RIFA-MERKLE-VAZIO");
+  let lvl = hexes.map((h) => C.sha256(C.concat(new Uint8Array([0]), fromHex(h))));
+  while (lvl.length > 1) {
+    const nx = [];
+    for (let i = 0; i < lvl.length; i += 2) nx.push(i + 1 < lvl.length ? C.sha256(C.concat(new Uint8Array([1]), lvl[i], lvl[i + 1])) : lvl[i]);
+    lvl = nx;
+  }
+  return toHex(lvl[0]);
+};
+C.merkleProof = function (hexes, idx) {
+  let lvl = hexes.map((h) => C.sha256(C.concat(new Uint8Array([0]), fromHex(h)))); const proof = [];
+  while (lvl.length > 1) {
+    const sib = idx ^ 1;
+    if (sib < lvl.length) proof.push({ side: idx % 2 ? "L" : "R", h: toHex(lvl[sib]) });
+    const nx = [];
+    for (let i = 0; i < lvl.length; i += 2) nx.push(i + 1 < lvl.length ? C.sha256(C.concat(new Uint8Array([1]), lvl[i], lvl[i + 1])) : lvl[i]);
+    lvl = nx; idx = Math.floor(idx / 2);
+  }
+  return proof;
+};
+C.merkleVerify = function (leafHex, proof, rootHex) {
+  let cur = C.sha256(C.concat(new Uint8Array([0]), fromHex(leafHex)));
+  for (const p of proof) cur = p.side === "L" ? C.sha256(C.concat(new Uint8Array([1]), fromHex(p.h), cur)) : C.sha256(C.concat(new Uint8Array([1]), cur, fromHex(p.h)));
+  return toHex(cur) === rootHex;
+};
+/* código curto legível de um documento (Base32, grupos de 4) */
+C.docCode = function (hashes) {
+  const A = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; const b = C.sha256(C.utf8("RIFA-DOC\x1f" + hashes.join(":")));
+  let bits = 0, val = 0, out = "";
+  for (const x of b) { val = (val << 8) | x; bits += 8; while (bits >= 5 && out.length < 20) { out += A[(val >>> (bits - 5)) & 31]; bits -= 5; } }
+  return out.match(/.{4}/g).join("-");
+};
+})(RIFA);
+
+/* Rifa — núcleo 2: livro-razão (cadeia SHA-256), regras da rifa, sorteio verificável (Federal ou digital com compromisso) */
+(function (C) {
+"use strict";
+const E = C.E;
+const KIND = { CONFIG: "C", PREMIOS: "M", RESERVA: "R", PAGAMENTO: "P", LIBERACAO: "L", TRANSFERENCIA: "T", ESTORNO: "E", VENDAS: "V", COMPROMISSO: "K", SORTEIO: "S" };
+C.KIND = KIND;
+C.DOC_NOME = { C: "Configuração do Certame", M: "Prêmios do Certame", R: "Reserva de Bilhetes", P: "Recibo de Pagamento", L: "Liberação de Reserva", T: "Transferência de Bilhetes", E: "Estorno", V: "Controle de Vendas", K: "Compromisso do Sorteio", S: "Ata de Apuração" };
+C.TIPO_NOME = { CONFIG: "Configuração", PREMIOS: "Prêmios", RESERVA: "Reserva", PAGAMENTO: "Pagamento", LIBERACAO: "Liberação de reserva", TRANSFERENCIA: "Transferência", ESTORNO: "Estorno", VENDAS: "Controle de vendas", COMPROMISSO: "Compromisso do sorteio", SORTEIO: "Apuração / sorteio" };
+C.METODOS = { FEDERAL: "Loteria Federal", DIGITAL: "Sorteio digital verificável" };
+C.TIPOS_PREMIO = { DINHEIRO: "Dinheiro (valor fixo)", PERCENTUAL: "Percentual da arrecadação", OBJETO: "Objeto / bem", MISTO: "Misto (objeto + dinheiro)" };
+
+C.padW = (total) => Math.max(2, String(Number(total) - 1).length);
+C.fmtNum = (n, total) => String(n).padStart(C.padW(total), "0");
+C.parseTickets = (s) => { if (typeof s !== "string" || !/^\d+(,\d+)*$/.test(s)) throw E("lista de bilhetes inválida"); const a = s.split(",").map(Number); for (let i = 1; i < a.length; i++) if (a[i] <= a[i - 1]) throw E("lista de bilhetes deve ser crescente e sem repetição"); return a; };
+C.joinTickets = (a) => [...new Set(a)].sort((x, y) => x - y).join(",");
+
+C.newState = () => ({
+  seq: 0, head: C.genesis(), hashes: [], movs: [], lastRegistrado: "", docs: {},
+  cfg: null, cfgHist: [], premios: [], premiosHist: [], t: {}, comp: {}, anulados: {},
+  vendasEnc: false, vendasLog: [], compromisso: null, sorteios: [], tentativas: [],
+});
+
+/* ---------- consultas de estado ---------- */
+C.arrecadacao = (st) => { let s = 0n; for (const k in st.t) if (st.t[k].st === "PAGO") s += st.t[k].unit; return s; };
+C.previsto = (st) => { let s = 0n; const u = st.cfg ? BigInt(st.cfg.valor_ponto_centavos) : 0n; for (const k in st.t) s += st.t[k].st === "PAGO" ? st.t[k].unit : u; return s; };
+C.contagem = (st) => { let l = 0, r = 0, p = 0; const tot = st.cfg ? Number(st.cfg.total) : 0; for (const k in st.t) { if (st.t[k].st === "PAGO") p++; else r++; } l = tot - r - p; return { livres: l, reservados: r, pagos: p, total: tot }; };
+C.elegiveis = (st) => Object.keys(st.t).filter((k) => st.t[k].st === "PAGO" && st.t[k].premio == null).map(Number).sort((a, b) => a - b);
+C.listaHash = (list) => C.sha256Hex("RIFA-LISTA\x1f" + list.join(","));
+C.valorPremio = (p, arrec) => {
+  const v = p.valor_centavos ? BigInt(p.valor_centavos) : 0n, bp = p.percentual_bp ? BigInt(p.percentual_bp) : 0n;
+  if (p.tipo === "DINHEIRO") return v; if (p.tipo === "PERCENTUAL") return C.roundDiv(BigInt(arrec) * bp, 10000n);
+  if (p.tipo === "MISTO") return v + C.roundDiv(BigInt(arrec) * bp, 10000n); return v;
+};
+C.descPremio = (p, arrec) => {
+  const dv = arrec != null ? C.fmtBRL(C.valorPremio(p, arrec)) : "";
+  if (p.tipo === "DINHEIRO") return (p.descricao ? p.descricao + " — " : "") + C.fmtBRL(BigInt(p.valor_centavos));
+  if (p.tipo === "PERCENTUAL") return (p.descricao ? p.descricao + " — " : "") + C.fmtDec(BigInt(p.percentual_bp), 2, 0) + "% da arrecadação confirmada" + (dv ? " (hoje " + dv + ")" : "");
+  if (p.tipo === "MISTO") { const partes = []; if (p.descricao) partes.push(p.descricao); if (p.valor_centavos && p.valor_centavos !== "0") partes.push(C.fmtBRL(BigInt(p.valor_centavos))); if (p.percentual_bp && p.percentual_bp !== "0") partes.push(C.fmtDec(BigInt(p.percentual_bp), 2, 0) + "% da arrecadação" + (dv ? " (hoje " + dv + " no total)" : "")); return partes.join(" + "); }
+  return p.descricao + (p.valor_centavos && p.valor_centavos !== "0" ? " (valor estimado " + C.fmtBRL(BigInt(p.valor_centavos)) + ")" : "");
+};
+C.codigoBilhete = (st, n) => { const t = st.t[n]; if (!t) return ""; const s = t.seqPag || t.seqRes; return C.docCode([st.hashes[s - 1]]); };
+C.statusCertame = (st) => !st.cfg ? "SEM_CONFIG" : st.premios.length && st.sorteios.length >= st.premios.length ? "SORTEADA" : st.vendasEnc ? "VENDAS_ENCERRADAS" : "ABERTA";
+
+/* ---------- apuração: regras determinísticas e verificáveis ---------- */
+C.federalBilhete = (st, digits) => {
+  const total = Number(st.cfg.total), w = C.padW(total); if (!/^\d{1,12}$/.test(digits)) throw E("número da Loteria Federal inválido (use só dígitos)");
+  const v = Number(digits.slice(-w)) % total, el = C.elegiveis(st); if (!el.length) return { v, bilhete: null, semElegiveis: true };
+  const set = new Set(el); if (set.has(v)) return { v, bilhete: v };
+  if (st.cfg.regra_vazio === "NOVO") return { v, bilhete: null };
+  for (let i = 1; i <= total; i++) { const x = (v + i) % total; if (set.has(x)) return { v, bilhete: x, proximo: true }; }
+  return { v, bilhete: null, semElegiveis: true };
+};
+C.digitalIndex = (seed, entropia, listaHash, ordem, n) => {
+  const lim = (1n << 256n) / BigInt(n) * BigInt(n);
+  for (let ctr = 0; ctr < 1000; ctr++) { const x = BigInt("0x" + C.sha256Hex("RIFA-DRAW\x1f" + seed + "\x1f" + entropia + "\x1f" + listaHash + "\x1f" + ordem + "\x1f" + ctr)); if (x < lim) return Number(x % BigInt(n)); }
+  throw E("falha ao derivar o sorteio");
+};
+C.commitHash = (seed) => C.sha256Hex("RIFA-SEED\x1f" + seed);
+C.novaSemente = () => { const b = new Uint8Array(32); (globalThis.crypto || require("crypto").webcrypto).getRandomValues(b); return C.toHex(b); };
+
+/* ---------- validações ---------- */
+const H = {};
+const txt = (s, min, max) => typeof s === "string" && s.trim().length >= min && s.length <= max;
+const docCheck = (st, r, need) => { const k = KIND[r.tipo]; need(/^\d+$/.test(r.doc_seq || "") && String((st.docs[k] || 0) + 1) === r.doc_seq, "número de documento fora de sequência"); st.docs[k] = (st.docs[k] || 0) + 1; };
+const dataOk = (need, r) => need(C.isDate(r.data), "data inválida");
+const lista = (st, r, need) => { let a; try { a = C.parseTickets(r.bilhetes); } catch (e) { need(false, e.message); } need(st.cfg, "configure o certame antes"); need(a.length <= 1000, "bilhetes demais em um registro"); for (const n of a) need(n < Number(st.cfg.total), "bilhete " + n + " fora da série"); return a; };
+const compOk = (need, c) => need(/^CMP-\d{4,6}$/.test(c || ""), "comprador inválido");
+const fn = (st, n) => C.fmtNum(n, st.cfg.total);
+
+H.CONFIG = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const d = r.dados; need(d && typeof d === "object" && !Array.isArray(d), "dados inválidos");
+  need(txt(d.certame, 3, 80), "nome do certame: 3 a 80 caracteres"); need((d.beneficiario || "").length <= 120, "beneficiário: até 120 caracteres");
+  need(/^\d+$/.test(d.valor_ponto_centavos || "") && BigInt(d.valor_ponto_centavos) > 0n, "valor do bilhete deve ser maior que zero");
+  need(/^\d+$/.test(d.total || "") && Number(d.total) >= 2 && Number(d.total) <= 10000, "quantidade de bilhetes: de 2 a 10000");
+  let maxN = -1; for (const k in st.t) maxN = Math.max(maxN, Number(k)); need(Number(d.total) > maxN, "há bilhetes vendidos/reservados até o nº " + (maxN >= 0 ? maxN : "") + "; a série não pode ficar menor que isso");
+  need(["FEDERAL", "DIGITAL"].includes(d.metodo), "método de apuração inválido"); need(["PROXIMO", "NOVO"].includes(d.regra_vazio), "regra para bilhete não elegível inválida");
+  need(d.data_sorteio === "" || /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(d.data_sorteio), "data do sorteio inválida");
+  need((d.concurso || "").length <= 60 && (d.pix_chave || "").length <= 80 && (d.pix_titular || "").length <= 60 && (d.pix_cidade || "").length <= 30 && (d.regulamento_extra || "").length <= 2000, "campo longo demais");
+  need(/^\d{0,3}$/.test(d.reserva_aviso_dias || ""), "aviso de reserva inválido");
+  if (st.cfg) {
+    need(txt(r.motivo, 5, 160), "informe o motivo da alteração (mín. 5 letras): fica público no histórico");
+    if (st.sorteios.length || st.tentativas.length) for (const k of ["metodo", "total", "regra_vazio", "valor_ponto_centavos"]) need(d[k] === st.cfg[k], "depois de iniciar a apuração não se pode mudar: " + k);
+  }
+  st.cfg = d; st.cfgHist.push({ seq: Number(r.seq), dados: d, motivo: r.motivo || "", data: r.data });
+};
+H.PREMIOS = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const l = r.lista; need(Array.isArray(l) && l.length <= 10, "até 10 prêmios");
+  l.forEach((p, i) => {
+    need(p.ordem === String(i + 1), "a ordem dos prêmios deve ser 1, 2, 3…"); need(["DINHEIRO", "PERCENTUAL", "OBJETO", "MISTO"].includes(p.tipo), "tipo de prêmio inválido");
+    need((p.descricao || "").length <= 120, "descrição do prêmio: até 120 caracteres"); need(/^\d*$/.test(p.valor_centavos || "") && /^\d*$/.test(p.percentual_bp || ""), "valor/percentual inválido");
+    const v = p.valor_centavos ? BigInt(p.valor_centavos) : 0n, bp = p.percentual_bp ? BigInt(p.percentual_bp) : 0n; need(bp <= 10000n, "percentual acima de 100%");
+    if (p.tipo === "DINHEIRO") need(v > 0n, "prêmio em dinheiro precisa de valor"); if (p.tipo === "PERCENTUAL") need(bp > 0n, "informe o percentual"); if (p.tipo === "OBJETO") need(txt(p.descricao, 2, 120), "descreva o objeto"); if (p.tipo === "MISTO") need(txt(p.descricao, 2, 120) && (v > 0n || bp > 0n), "prêmio misto: descreva o objeto e informe valor ou percentual");
   });
-
-  updateCartSummary();
-}
-
-function toggleTicketSelection(num) {
-  if (userSelectedTickets.includes(num)) {
-    userSelectedTickets = userSelectedTickets.filter(n => n !== num);
+  if (st.premios.length) need(txt(r.motivo, 5, 160), "informe o motivo da alteração (mín. 5 letras): fica público no histórico");
+  need(l.length >= st.sorteios.length, "não é possível remover prêmio já sorteado");
+  st.premios = l; st.premiosHist.push({ seq: Number(r.seq), lista: l, motivo: r.motivo || "", data: r.data, aposSorteio: st.sorteios.length > 0 });
+};
+H.RESERVA = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const a = lista(st, r, need); compOk(need, r.comprador); need(!st.vendasEnc, "vendas encerradas");
+  for (const n of a) need(!st.t[n], "bilhete " + fn(st, n) + " não está livre");
+  for (const n of a) st.t[n] = { st: "RESERVADO", comp: r.comprador, seqRes: Number(r.seq), data: r.data }; st.comp[r.comprador] = 1;
+};
+H.PAGAMENTO = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const a = lista(st, r, need); compOk(need, r.comprador); need(!st.vendasEnc, "vendas encerradas: reabra as vendas para registrar pagamento");
+  need(/^\d+$/.test(r.valor_unit_centavos || ""), "valor por bilhete inválido"); const u = BigInt(r.valor_unit_centavos); need(txt(r.forma, 2, 30), "forma de pagamento: 2 a 30 caracteres");
+  if (u === 0n) need(txt(r.obs, 3, 120), "bilhete sem valor (cortesia) exige observação");
+  for (const n of a) { const t = st.t[n]; need(!t || (t.st === "RESERVADO" && t.comp === r.comprador), "bilhete " + fn(st, n) + (t ? " pertence a outro comprador ou já está pago" : " inválido")); }
+  for (const n of a) st.t[n] = { st: "PAGO", comp: r.comprador, unit: u, seqPag: Number(r.seq), seqRes: (st.t[n] && st.t[n].seqRes) || 0, data: r.data, forma: r.forma }; st.comp[r.comprador] = 1;
+};
+H.LIBERACAO = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const a = lista(st, r, need); need(txt(r.motivo, 3, 160), "informe o motivo (mín. 3 letras)"); need(!st.vendasEnc, "vendas encerradas");
+  for (const n of a) need(st.t[n] && st.t[n].st === "RESERVADO", "bilhete " + fn(st, n) + " não está reservado (para pago use estorno)");
+  for (const n of a) delete st.t[n];
+};
+H.TRANSFERENCIA = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); const a = lista(st, r, need); compOk(need, r.para); need(txt(r.motivo, 3, 160), "informe o motivo (mín. 3 letras)");
+  for (const n of a) { need(st.t[n], "bilhete " + fn(st, n) + " está livre"); need(st.t[n].premio == null, "bilhete já premiado não pode ser transferido"); }
+  for (const n of a) st.t[n] = Object.assign({}, st.t[n], { comp: r.para }); st.comp[r.para] = 1;
+};
+H.ESTORNO = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); need(txt(r.motivo, 5, 160), "informe o motivo do estorno (mín. 5 letras)"); const ref = st.movs[Number(r.ref_seq) - 1]; need(ref && /^\d+$/.test(r.ref_seq), "registro de referência inexistente"); need(!st.anulados[ref.seq], "registro já estornado");
+  need(r.tipo_ref === ref.tipo, "tipo do registro de referência não confere");
+  if (ref.tipo === "PAGAMENTO") {
+    need(!st.vendasEnc, "vendas encerradas: reabra as vendas para estornar"); need(["LIVRE", "RESERVADO"].includes(r.destino), "destino do estorno inválido"); const a = C.parseTickets(ref.bilhetes);
+    for (const n of a) { const t = st.t[n]; need(t && t.st === "PAGO" && t.seqPag === Number(ref.seq), "bilhete " + fn(st, n) + " mudou depois deste pagamento; estorne na ordem inversa"); need(t.premio == null, "bilhete premiado: anule antes a apuração"); }
+    for (const n of a) { if (r.destino === "LIVRE") delete st.t[n]; else st.t[n] = { st: "RESERVADO", comp: st.t[n].comp, seqRes: st.t[n].seqRes || Number(ref.seq), data: r.data }; }
+  } else if (ref.tipo === "SORTEIO") {
+    need(ref.resultado === "GANHADOR", "só se estorna apuração com ganhador"); const ult = st.sorteios[st.sorteios.length - 1]; need(ult && ult.seq === Number(ref.seq), "anule as apurações na ordem inversa (a mais recente primeiro)");
+    delete st.t[Number(ref.bilhete)].premio; st.sorteios.pop();
+  } else need(false, "só pagamentos e apurações podem ser estornados (reservas: use liberação)");
+  st.anulados[ref.seq] = Number(r.seq);
+};
+H.VENDAS = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); need(st.cfg, "configure o certame antes"); need(["ENCERRAR", "REABRIR"].includes(r.acao), "ação inválida");
+  const el = C.elegiveis(st), arr = C.arrecadacao(st);
+  if (r.acao === "ENCERRAR") {
+    need(!st.vendasEnc, "vendas já encerradas"); if (st.cfg.metodo === "DIGITAL") need(st.compromisso, "sorteio digital: registre o compromisso (hash da semente) antes de encerrar");
+    need(r.lista_pagos_hash === C.listaHash(el) && r.total_pagos === String(el.length) && r.arrecadacao_centavos === String(arr), "resumo do encerramento não confere com o livro"); st.vendasEnc = true;
+  } else { need(st.vendasEnc, "vendas já estão abertas"); need(!st.sorteios.length && !st.tentativas.length, "há apurações registradas: anule-as antes de reabrir"); need(txt(r.motivo, 5, 160), "informe o motivo (mín. 5 letras)"); st.vendasEnc = false; }
+  st.vendasLog.push({ seq: Number(r.seq), acao: r.acao, data: r.data, total_pagos: r.total_pagos || "", motivo: r.motivo || "" });
+};
+H.COMPROMISSO = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); need(!st.vendasEnc, "o compromisso deve ser registrado antes de encerrar as vendas"); need(!st.sorteios.length, "já há apuração registrada"); need(/^[0-9a-f]{64}$/.test(r.hash_semente || ""), "hash da semente inválido");
+  st.compromisso = { seq: Number(r.seq), hash: r.hash_semente, data: r.data };
+};
+H.SORTEIO = (st, r, need) => {
+  docCheck(st, r, need); dataOk(need, r); need(st.cfg && st.vendasEnc, "encerre as vendas antes de apurar"); need(r.metodo === st.cfg.metodo, "método diferente do configurado (" + C.METODOS[st.cfg.metodo] + ")");
+  const ordem = st.sorteios.length + 1; need(r.ordem === String(ordem), "o próximo prêmio a apurar é o " + ordem + "º"); const pr = st.premios[ordem - 1]; need(pr, "cadastre o prêmio " + ordem + " antes de apurar");
+  const el = C.elegiveis(st); need(el.length > 0, "não há bilhetes pagos elegíveis"); const lh = C.listaHash(el), arr = C.arrecadacao(st), pv = C.valorPremio(pr, arr);
+  need(r.lista_pagos_hash === lh, "lista de elegíveis não confere"); need(r.arrecadacao_centavos === String(arr), "arrecadação não confere"); need(r.premio_valor_centavos === String(pv), "valor do prêmio não confere");
+  let b = null;
+  if (r.metodo === "FEDERAL") {
+    need(/^\d{1,12}$/.test(r.premio_federal || ""), "informe o número sorteado pela Loteria Federal"); need((r.concurso_fed || "").length <= 60, "concurso longo demais"); const f = C.federalBilhete(st, r.premio_federal); b = f.bilhete;
+    need(r.numero_base === String(f.v), "número-base não confere");
   } else {
-    userSelectedTickets.push(num);
-    userSelectedTickets.sort();
+    need(/^[0-9a-f]{64}$/.test(r.semente || "") && st.compromisso && C.commitHash(r.semente) === st.compromisso.hash, "a semente revelada não confere com o compromisso registrado"); need((r.entropia || "").length <= 200, "entropia longa demais");
+    b = el[C.digitalIndex(r.semente, r.entropia || "", lh, String(ordem), el.length)];
   }
-  renderPublicGrid();
-}
+  if (b == null) { need(r.resultado === "SEM_GANHADOR" && r.bilhete === "", "o resultado deveria ser SEM GANHADOR (bilhete sorteado não elegível e regra = novo concurso)"); st.tentativas.push({ seq: Number(r.seq), ordem, premio_federal: r.premio_federal, data: r.data }); return; }
+  need(r.resultado === "GANHADOR" && r.bilhete === String(b), "bilhete apurado não confere com a regra (esperado " + fn(st, b) + ")");
+  st.t[b] = Object.assign({}, st.t[b], { premio: ordem }); st.sorteios.push({ seq: Number(r.seq), ordem, bilhete: b, metodo: r.metodo, data: r.data, premio_valor: pv, arrecadacao: arr, premio_federal: r.premio_federal || "", concurso: r.concurso_fed || "", entropia: r.entropia || "", semente: r.semente || "", lista_hash: lh, numero_base: r.numero_base || "" });
+};
 
-function clearUserSelection() {
-  userSelectedTickets = [];
-  renderPublicGrid();
-}
+C.apply = function (st, r) {
+  const need = (c, m) => { if (!c) throw E("#" + r.seq + " " + r.tipo + ": " + m); return true; };
+  need(r && typeof r === "object", "registro inválido"); need(String(st.seq + 1) === r.seq, "sequência quebrada (esperado " + (st.seq + 1) + ")"); need(r.hash_anterior === st.head, "hash_anterior não confere (cadeia rompida)");
+  need(C.isIso(r.registrado_em), "registrado_em inválido"); need(r.autor === "ADMIN", "autor desconhecido");
+  need(/^[0-9a-f]{64}$/.test(r.hash || "") && r.hash === C.recHash(st.head, r), "hash do registro não confere (adulteração detectada)");
+  const f = H[r.tipo]; need(f, "tipo desconhecido: " + r.tipo); f(st, r, need);
+  st.seq++; st.head = r.hash; st.hashes.push(r.hash); st.movs.push(r); st.lastRegistrado = r.registrado_em;
+};
 
-function updateCartSummary() {
-  const count = userSelectedTickets.length;
-  const total = count * portalDB.unitValue;
-
-  document.getElementById("dispSelectedNumbers").innerText = count > 0 
-    ? userSelectedTickets.join(", ") 
-    : "Nenhum selecionado";
-  document.getElementById("dispSelectedCount").innerText = count;
-  document.getElementById("dispSelectedTotal").innerText = total.toFixed(2);
-}
-
-/**
- * DESPACHO DA SOLICITAÇÃO VIA WHATSAPP (BOTÃO INTELIGENTE)
- */
-function submitReservationViaWhatsApp() {
-  const name = document.getElementById("userName").value.trim();
-  const phone = document.getElementById("userPhone").value.trim();
-
-  if (!name) {
-    alert("Por favor, digite seu Nome ou Nickname no formulário.");
-    document.getElementById("userName").focus();
-    return;
-  }
-
-  if (userSelectedTickets.length === 0) {
-    alert("Por favor, clique e selecione pelo menos 1 número disponível na grade.");
-    return;
-  }
-
-  const count = userSelectedTickets.length;
-  const totalVal = (count * portalDB.unitValue).toFixed(2);
-  const ticketsListStr = userSelectedTickets.join(", ");
-  const cleanAdminPhone = (portalDB.adminPhone || "61999487649").replace(/\D/g, '');
-
-  const msg = 
-`*SOLICITAÇÃO DE RESERVA - AÇÃO SOLIDÁRIA*
-=========================================
-*Certame:* ${portalDB.certame}
-*Beneficiário:* ${portalDB.beneficiario}
-*Participante:* ${name}
-*WhatsApp:* ${phone || 'Não informado'}
-
-*Ponto(s) Escolhido(s):* [ ${ticketsListStr} ]
-*Quantidade:* ${count} bilhete(s)
-*Valor Unitário:* R$ ${portalDB.unitValue.toFixed(2)}
-*TOTAL DA CONTRIBUIÇÃO:* R$ ${totalVal}
-
-*Chave PIX Oficial de Pagamento:*
-${portalDB.pixKey} (${portalDB.pixTitular})
-=========================================
-Olá, coordenador! Enviei a solicitação dos números acima pelo portal. Aguardo a confirmação e o envio do bilhete oficial!`;
-
-  let waTarget = cleanAdminPhone;
-  if (waTarget.length === 10 || waTarget.length === 11) {
-    waTarget = '55' + waTarget;
-  }
-
-  const finalUrl = `https://wa.me/${waTarget}?text=${encodeURIComponent(msg)}`;
-  window.open(finalUrl, '_blank');
-}
-
-/**
- * PAINEL ADMINISTRATIVO (SENHA: rfb2026)
- */
-function openAdminModal() {
-  document.getElementById("adminModal").style.display = "flex";
-  document.getElementById("adminPasswordInput").value = "";
-  document.getElementById("adminAuthSection").style.display = "block";
-  document.getElementById("adminSettingsSection").style.display = "none";
-  document.getElementById("adminPasswordInput").focus();
-}
-
-function closeAdminModal() {
-  document.getElementById("adminModal").style.display = "none";
-}
-
-function verifyAdminPassword() {
-  const pwd = document.getElementById("adminPasswordInput").value.trim();
-  if (pwd === "rfb2026") {
-    document.getElementById("adminAuthSection").style.display = "none";
-    document.getElementById("adminSettingsSection").style.display = "block";
-    loadSettingsIntoForm();
-  } else {
-    alert("Senha administrativa incorreta!");
-    document.getElementById("adminPasswordInput").value = "";
-  }
-}
-
-function loadSettingsIntoForm() {
-  document.getElementById("cfgCertameName").value = portalDB.certame;
-  document.getElementById("cfgBeneficiario").value = portalDB.beneficiario;
-  document.getElementById("cfgPrize").value = portalDB.prize;
-  document.getElementById("cfgUnitValue").value = portalDB.unitValue;
-  document.getElementById("cfgTotalNumbers").value = portalDB.totalNumbers;
-  document.getElementById("cfgAdminPhone").value = portalDB.adminPhone;
-  document.getElementById("cfgDrawMethod").value = portalDB.drawMethod;
-  document.getElementById("cfgDrawDate").value = portalDB.drawDate;
-  document.getElementById("cfgPixKey").value = portalDB.pixKey;
-  document.getElementById("cfgPixTitular").value = portalDB.pixTitular;
-}
-
-function saveAdminSettings() {
-  const newQty = parseInt(document.getElementById("cfgTotalNumbers").value, 10);
-  const oldQty = portalDB.totalNumbers;
-
-  portalDB.certame = document.getElementById("cfgCertameName").value.trim() || DEFAULT_PORTAL_CONFIG.certame;
-  portalDB.beneficiario = document.getElementById("cfgBeneficiario").value.trim() || DEFAULT_PORTAL_CONFIG.beneficiario;
-  portalDB.prize = document.getElementById("cfgPrize").value.trim() || DEFAULT_PORTAL_CONFIG.prize;
-  portalDB.unitValue = parseFloat(document.getElementById("cfgUnitValue").value) || 10;
-  portalDB.adminPhone = document.getElementById("cfgAdminPhone").value.replace(/\D/g, '') || "61999487649";
-  portalDB.drawMethod = document.getElementById("cfgDrawMethod").value;
-  portalDB.drawDate = document.getElementById("cfgDrawDate").value;
-  portalDB.pixKey = document.getElementById("cfgPixKey").value.trim() || "61999487649";
-  portalDB.pixTitular = document.getElementById("cfgPixTitular").value.trim() || "Carlos Alberto Reis";
-
-  if (newQty !== oldQty && newQty >= 10 && newQty <= 9999) {
-    if (confirm(`Alterar a série de ${oldQty} para ${newQty} números reconfigurará a grade. Deseja aplicar?`)) {
-      portalDB.totalNumbers = newQty;
-      initTicketsStatus(newQty);
-      userSelectedTickets = [];
-    }
-  }
-
-  saveLocal();
-  updatePublicDisplay();
-  renderPublicGrid();
-  closeAdminModal();
-  alert("Configurações do portal salvas e atualizadas com sucesso!");
-}
-
-/**
- * SINCRONIZAÇÃO COM O BACKUP DO SISTEMA OFICIAL
- */
-function syncWithOfficialBackup(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
+C.Ledger = class {
+  constructor() { this.reset(); }
+  reset() { this.records = []; this.state = C.newState(); }
+  load(recs) { this.reset(); for (const r of recs) { C.apply(this.state, r); this.records.push(r); } }
+  append(partials, nowIso) {
+    const snap = this.records.length, out = []; let now = nowIso || new Date().toISOString().replace(/\.\d+Z$/, "Z"); const last = this.state.lastRegistrado;
+    if (last && now < last) { if (Date.parse(last) - Date.parse(now) > 60000) throw E("O relógio do aparelho está atrasado em relação ao último registro (" + C.fmtIso(last) + "). Acerte data e hora antes de registrar."); now = last; }
     try {
-      const officialDB = JSON.parse(e.target.result);
-      if (!officialDB.tickets) throw new Error("JSON sem tickets");
-
-      let updatedCount = 0;
-      Object.keys(officialDB.tickets).forEach(num => {
-        if (portalDB.ticketsStatus.hasOwnProperty(num)) {
-          portalDB.ticketsStatus[num] = officialDB.tickets[num].status;
-          updatedCount++;
-        }
-      });
-
-      // Se o backup tiver informações do certame, sincroniza
-      if (officialDB.certame) portalDB.certame = officialDB.certame;
-      if (officialDB.unitValue) portalDB.unitValue = officialDB.unitValue;
-      if (officialDB.pixKey) portalDB.pixKey = officialDB.pixKey;
-
-      saveLocal();
-      updatePublicDisplay();
-      renderPublicGrid();
-      alert(`Sincronização concluída! ${updatedCount} pontos foram atualizados conforme a base oficial.`);
-    } catch(err) {
-      alert("Erro ao ler backup: verifique se selecionou o arquivo .json oficial correto.");
-    }
-  };
-  reader.readAsText(file);
-}
-
-function exportPortalConfig() {
-  const blob = new Blob([JSON.stringify(portalDB, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `config_portal_rifa_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-}
-
-function resetPortalNumbers() {
-  if (confirm("Deseja realmente redefinir todos os pontos para 'DISPONÍVEL'?")) {
-    initTicketsStatus(portalDB.totalNumbers);
-    userSelectedTickets = [];
-    saveLocal();
-    renderPublicGrid();
-    alert("Todos os números voltaram ao status Disponível.");
+      for (const p of partials) { const r = Object.assign({}, p, { seq: String(this.state.seq + 1), registrado_em: now, autor: "ADMIN" }); r.hash_anterior = this.state.head; r.hash = C.recHash(r.hash_anterior, r); C.apply(this.state, r); this.records.push(r); out.push(r); }
+      return out;
+    } catch (e) { this.records.length = snap; this.state = C.newState(); for (const r of this.records) C.apply(this.state, r); throw e; }
   }
+  nextDoc(tipo, add) { return String((this.state.docs[KIND[tipo]] || 0) + 1 + (add || 0)); }
+};
+const tick = () => new Promise((r) => setTimeout(r, 0));
+C.verifyRecords = async function (records, opts) {
+  opts = opts || {}; const st = C.newState(), errors = [];
+  for (let i = 0; i < records.length; i++) { try { C.apply(st, records[i]); } catch (e) { errors.push({ seq: i + 1, msg: e.message }); break; } if (i % 300 === 299) { if (opts.onProgress) opts.onProgress(i + 1, records.length); await tick(); } }
+  return { ok: !errors.length, errors, state: st, count: records.length };
+};
+})(RIFA);
+
+/* Rifa — núcleo extra: PIX BR Code, QR Code (JS puro), CSV */
+(function (C) {
+"use strict";
+const E = C.E;
+/* ---------- PIX (BR Code estático) ---------- */
+C.crc16 = function (s) {
+  let crc = 0xffff;
+  for (let i = 0; i < s.length; i++) { crc ^= s.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff; }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
+};
+const tlv = (id, v) => id + String(v.length).padStart(2, "0") + v;
+const ascii = (s, n) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9 ]/g, "").toUpperCase().trim().slice(0, n);
+C.pixChave = (c) => { c = String(c || "").trim(); if (/^\+?\d{10,14}$/.test(c.replace(/[\s()-]/g, ""))) { const d = c.replace(/\D/g, ""); return d.startsWith("55") && d.length >= 12 ? "+" + d : "+55" + d; } return c; };
+C.pixPayload = function (o) {
+  const chave = C.pixChave(o.chave); if (!chave) throw E("Chave PIX ausente");
+  let mai = tlv("00", "br.gov.bcb.pix") + tlv("01", chave); if (o.descricao) mai += tlv("02", ascii(o.descricao, 40));
+  let s = tlv("00", "01") + tlv("01", o.valorCentavos ? "12" : "11") + tlv("26", mai) + tlv("52", "0000") + tlv("53", "986");
+  if (o.valorCentavos) { const v = BigInt(o.valorCentavos); if (v <= 0n) throw E("valor inválido"); s += tlv("54", C.fmtDec(v, 2, 2).replace(/\./g, "").replace(",", ".")); }
+  s += tlv("58", "BR") + tlv("59", ascii(o.nome, 25) || "RECEBEDOR") + tlv("60", ascii(o.cidade, 15) || "BRASIL") + tlv("62", tlv("05", ascii(o.txid, 25).replace(/ /g, "") || "***")) + "6304";
+  return s + C.crc16(s);
+};
+
+/* ---------- QR Code (modo byte, correção M, versões 1–10), baseado no algoritmo público de Nayuki ---------- */
+C.QR = (function () {
+  const ECC = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26], BLK = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
+  const rawMods = (v) => { let r = (16 * v + 128) * v + 64; if (v >= 2) { const a = Math.floor(v / 7) + 2; r -= (25 * a - 10) * a - 55; if (v >= 7) r -= 36; } return r; };
+  const dataCw = (v) => Math.floor(rawMods(v) / 8) - ECC[v] * BLK[v];
+  const gfMul = (x, y) => { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11d); z ^= ((y >>> i) & 1) * x; } return z; };
+  const rsDiv = (deg) => { const r = new Array(deg).fill(0); r[deg - 1] = 1; let root = 1; for (let i = 0; i < deg; i++) { for (let j = 0; j < deg; j++) { r[j] = gfMul(r[j], root); if (j + 1 < deg) r[j] ^= r[j + 1]; } root = gfMul(root, 2); } return r; };
+  const rsRem = (data, div) => { const r = div.map(() => 0); for (const b of data) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => (r[i] ^= gfMul(c, f))); } return r; };
+  const bit = (x, i) => ((x >>> i) & 1) !== 0;
+  function make(text) {
+    const bytes = typeof text === "string" ? C.utf8(text) : text; let ver = 0;
+    for (let v = 1; v <= 10; v++) { const cc = v <= 9 ? 8 : 16; if (4 + cc + bytes.length * 8 <= dataCw(v) * 8) { ver = v; break; } }
+    if (!ver) throw E("Texto longo demais para o QR (máx. ~213 bytes)");
+    const bits = []; const put = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+    put(4, 4); put(bytes.length, ver <= 9 ? 8 : 16); for (const b of bytes) put(b, 8);
+    const cap = dataCw(ver) * 8; put(0, Math.min(4, cap - bits.length)); while (bits.length % 8) bits.push(0);
+    for (let pad = 0xec; bits.length < cap; pad ^= 0xec ^ 0x11) put(pad, 8);
+    const data = []; for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(""), 2));
+    /* ECC + intercalação */
+    const nb = BLK[ver], eb = ECC[ver], raw = Math.floor(rawMods(ver) / 8), ns = nb - (raw % nb), sl = Math.floor(raw / nb), div = rsDiv(eb), blocks = [];
+    for (let i = 0, k = 0; i < nb; i++) { const dat = data.slice(k, k + sl - eb + (i < ns ? 0 : 1)); k += dat.length; const ecc = rsRem(dat, div); if (i < ns) dat.push(0); blocks.push(dat.concat(ecc)); }
+    const all = []; for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== sl - eb || j >= ns) all.push(b[i]); });
+    const size = ver * 4 + 17, mod = Array.from({ length: size }, () => new Array(size).fill(false)), fn = Array.from({ length: size }, () => new Array(size).fill(false));
+    const setF = (x, y, d) => { mod[y][x] = d; fn[y][x] = true; };
+    const fmt = (mask) => { const dd = mask; let rem = dd; for (let i = 0; i < 10; i++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537); const b = ((dd << 10) | rem) ^ 0x5412;
+      for (let i = 0; i <= 5; i++) setF(8, i, bit(b, i)); setF(8, 7, bit(b, 6)); setF(8, 8, bit(b, 7)); setF(7, 8, bit(b, 8)); for (let i = 9; i < 15; i++) setF(14 - i, 8, bit(b, i));
+      for (let i = 0; i < 8; i++) setF(size - 1 - i, 8, bit(b, i)); for (let i = 8; i < 15; i++) setF(8, size - 15 + i, bit(b, i)); setF(8, size - 8, true); };
+    for (let i = 0; i < size; i++) { setF(6, i, i % 2 === 0); setF(i, 6, i % 2 === 0); }
+    const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy; if (x >= 0 && x < size && y >= 0 && y < size) setF(x, y, d !== 2 && d !== 4); } };
+    finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+    const na = ver === 1 ? 0 : Math.floor(ver / 7) + 2; let ap = [];
+    if (na) { const step = Math.ceil((ver * 4 + 4) / (na * 2 - 2)) * 2; ap = [6]; for (let pos = size - 7; ap.length < na; pos -= step) ap.splice(1, 0, pos); }
+    for (let i = 0; i < ap.length; i++) for (let j = 0; j < ap.length; j++) { if ((i === 0 && j === 0) || (i === 0 && j === na - 1) || (i === na - 1 && j === 0)) continue; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) setF(ap[i] + dx, ap[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1); }
+    fmt(0);
+    if (ver >= 7) { let rem = ver; for (let i = 0; i < 12; i++) rem = (rem << 1) ^ ((rem >>> 11) * 0x1f25); const b = (ver << 12) | rem; for (let i = 0; i < 18; i++) { const c = bit(b, i), a = size - 11 + (i % 3), bb = Math.floor(i / 3); setF(a, bb, c); setF(bb, a, c); } }
+    /* palavras-código em zigue-zague */
+    let bi = 0;
+    for (let right = size - 1; right >= 1; right -= 2) { if (right === 6) right = 5; for (let vert = 0; vert < size; vert++) for (let j = 0; j < 2; j++) { const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert; if (!fn[y][x] && bi < all.length * 8) { mod[y][x] = bit(all[bi >>> 3], 7 - (bi & 7)); bi++; } } }
+    const mask = (m) => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) { let inv; switch (m) { case 0: inv = (x + y) % 2 === 0; break; case 1: inv = y % 2 === 0; break; case 2: inv = x % 3 === 0; break; case 3: inv = (x + y) % 3 === 0; break; case 4: inv = (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; break; case 5: inv = ((x * y) % 2) + ((x * y) % 3) === 0; break; case 6: inv = (((x * y) % 2) + ((x * y) % 3)) % 2 === 0; break; default: inv = (((x + y) % 2) + ((x * y) % 3)) % 2 === 0; } if (!fn[y][x] && inv) mod[y][x] = !mod[y][x]; } };
+    const addH = (run, h) => { if (h[0] === 0) run += size; h.pop(); h.unshift(run); };
+    const cnt = (h) => { const n = h[1], core = n > 0 && h[2] === n && h[3] === n * 3 && h[4] === n && h[5] === n; return (core && h[0] >= n * 4 && h[6] >= n ? 1 : 0) + (core && h[6] >= n * 4 && h[0] >= n ? 1 : 0); };
+    const term = (c, run, h) => { if (c) { addH(run, h); run = 0; } run += size; addH(run, h); return cnt(h); };
+    const penalty = () => { let res = 0;
+      for (let y = 0; y < size; y++) { let rc = false, rx = 0; const h = [0, 0, 0, 0, 0, 0, 0]; for (let x = 0; x < size; x++) { if (mod[y][x] === rc) { rx++; if (rx === 5) res += 3; else if (rx > 5) res++; } else { addH(rx, h); if (!rc) res += cnt(h) * 40; rc = mod[y][x]; rx = 1; } } res += term(rc, rx, h) * 40; }
+      for (let x = 0; x < size; x++) { let rc = false, ry = 0; const h = [0, 0, 0, 0, 0, 0, 0]; for (let y = 0; y < size; y++) { if (mod[y][x] === rc) { ry++; if (ry === 5) res += 3; else if (ry > 5) res++; } else { addH(ry, h); if (!rc) res += cnt(h) * 40; rc = mod[y][x]; ry = 1; } } res += term(rc, ry, h) * 40; }
+      for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = mod[y][x]; if (c === mod[y][x + 1] && c === mod[y + 1][x] && c === mod[y + 1][x + 1]) res += 3; }
+      let dark = 0; for (const row of mod) for (const c of row) if (c) dark++; const tot = size * size; res += (Math.ceil(Math.abs(dark * 20 - tot * 10) / tot) - 1) * 10; return res; };
+    let best = 0, bp = Infinity;
+    for (let m = 0; m < 8; m++) { mask(m); fmt(m); const p = penalty(); if (p < bp) { bp = p; best = m; } mask(m); }
+    mask(best); fmt(best);
+    return { size, version: ver, get: (x, y) => mod[y][x], mask: best };
+  }
+  /* desenha o QR em <svg> (sem innerHTML) */
+  function toSvg(qr, px, doc) {
+    doc = doc || document; const b = 4, n = qr.size + b * 2, ns = "http://www.w3.org/2000/svg", s = doc.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", "0 0 " + n + " " + n); s.setAttribute("width", px || 200); s.setAttribute("height", px || 200); s.setAttribute("role", "img"); s.setAttribute("shape-rendering", "crispEdges");
+    const bg = doc.createElementNS(ns, "rect"); bg.setAttribute("width", n); bg.setAttribute("height", n); bg.setAttribute("fill", "#fff"); s.appendChild(bg);
+    let d = ""; for (let y = 0; y < qr.size; y++) for (let x = 0; x < qr.size; x++) if (qr.get(x, y)) d += "M" + (x + b) + "," + (y + b) + "h1v1h-1z";
+    const p = doc.createElementNS(ns, "path"); p.setAttribute("d", d); p.setAttribute("fill", "#000"); s.appendChild(p); return s;
+  }
+  return { make, toSvg };
+})();
+
+/* ---------- CSV ---------- */
+C.csv = (cols, rows) => "﻿" + [cols, ...rows].map((r) => r.map((c) => { let s = String(c == null ? "" : c); if (/^[=@]|^[+-](?![\d.,R$ ])/.test(s)) s = "'" + s; return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(";")).join("\r\n");
+})(RIFA);
+
+/* Rifa — núcleo 4: textos públicos compartilhados (app + portal), exportação do portal, varredura de privacidade e código de pedido de reserva */
+(function (C) {
+"use strict";
+const E = C.E;
+const digits = (x) => String(x || "").replace(/\D/g, "");
+
+/* ---------- textos públicos (idênticos no app e no portal) ---------- */
+C.regulamentoTexto = function (s) {
+  const c = s.cfg, w = C.padW(Number(c.total)), arr = C.arrecadacao(s), out = [];
+  out.push(["1. Identificação", ["Certame: " + c.certame + ". Finalidade/beneficiário: " + (c.beneficiario || "não informado") + ". Organizador/titular do PIX: " + (c.pix_titular || "não informado") + "."]]);
+  out.push(["2. Bilhetes e preço", ["Série de " + c.total + " bilhetes, numerados de " + C.fmtNum(0, c.total) + " a " + C.fmtNum(Number(c.total) - 1, c.total) + ". Preço de tabela: " + C.fmtBRL(c.valor_ponto_centavos) + " por bilhete; o valor efetivamente pago (inclusive descontos ou cortesias justificadas) fica gravado no livro e no bilhete. A série pode ser ampliada pelo organizador sem prejuízo das vendas já feitas; toda alteração registra data e motivo no livro público."]]);
+  out.push(["3. Reservas e pagamento", ["Concorrem ao sorteio somente os bilhetes PAGOS até o encerramento das vendas. Reservas não vencem automaticamente; o organizador decide, com motivo registrado, quando liberar uma reserva. O pagamento é confirmado manualmente pelo organizador após o recebimento (PIX " + (c.pix_chave || "—") + ")."]]);
+  const pr = s.premios.length ? s.premios.map((p, i) => (i + 1) + "º prêmio: " + C.descPremio(p, arr)) : ["Prêmios ainda não definidos."];
+  out.push(["4. Prêmios", pr.concat(["Os prêmios podem ser alterados pelo organizador a qualquer momento, sempre com motivo; cada versão permanece visível no histórico público (inclusive alterações feitas depois de iniciada a apuração). Prêmios em percentual são calculados sobre a arrecadação confirmada no momento da apuração."])]);
+  if (c.metodo === "FEDERAL") out.push(["5. Apuração pela Loteria Federal", ["O número oficial divulgado pela Loteria Federal (" + (c.concurso || "concurso a informar") + ") é digitado e registrado no livro. O bilhete é obtido pelos " + w + " últimos dígitos desse número, divididos pelo total de bilhetes (resto da divisão = número-base).", c.regra_vazio === "PROXIMO" ? "Se o bilhete-base não estiver pago, vale o próximo bilhete pago, em ordem crescente e circular." : "Se o bilhete-base não estiver pago, não há ganhador naquela apuração e o prêmio aguarda um novo concurso da Loteria Federal.", "Qualquer pessoa pode refazer o cálculo com o número oficial e a lista de bilhetes pagos."]]);
+  else out.push(["5. Sorteio digital verificável", ["Antes de encerrar as vendas, o organizador registra no livro o COMPROMISSO: o hash SHA-256 de uma semente secreta. No sorteio, a semente é revelada e qualquer pessoa confere que ela gera o hash já registrado. O bilhete é derivado de SHA-256(semente, entropia pública opcional, hash da lista de bilhetes pagos, ordem do prêmio) com amostragem sem viés sobre a lista ordenada de bilhetes pagos elegíveis. Como a lista de elegíveis é congelada e registrada no encerramento, o organizador não pode escolher o resultado depois de conhecê-lo."]]);
+  out.push(["6. Ordem e regras de elegibilidade", ["Os prêmios são apurados na ordem 1º, 2º, 3º… Um mesmo bilhete ganha no máximo um prêmio (bilhetes já premiados saem da lista dos seguintes). Depois de iniciada a apuração, método, quantidade, preço e regra de bilhete não elegível não podem mais ser alterados."]]);
+  out.push(["7. Transparência", ["Toda movimentação é gravada em um livro encadeado por SHA-256: qualquer alteração posterior quebra a cadeia e é detectada. Cada recibo, bilhete e ata traz um código de verificação. O organizador pode emitir a prestação de contas completa a qualquer momento."]]);
+  out.push(["8. Responsabilidade do organizador", ["Sorteios e rifas podem exigir autorização ou observância de normas específicas no Brasil. Cabe ao organizador verificar a legislação aplicável e as regras do seu caso. Este regulamento descreve o funcionamento técnico e a transparência do processo; não substitui orientação jurídica."]]);
+  if (c.regulamento_extra) out.push(["9. Disposições adicionais", [c.regulamento_extra]]);
+  return out;
+};
+
+C.resumoRegistro = function (s, r, nomeP) {
+  const fnum = (n) => C.fmtNum(n, s.cfg.total), brl = C.fmtBRL, shortHash = (x) => (x ? x.slice(0, 10) + "…" + x.slice(-6) : ""), tk = () => { try { return C.parseTickets(r.bilhetes).map(fnum).join(", "); } catch (_) { return r.bilhetes; } };
+  switch (r.tipo) {
+    case "CONFIG": return "Configuração: " + r.dados.certame + " · " + r.dados.total + " bilhetes · " + brl(r.dados.valor_ponto_centavos) + (r.motivo ? " · motivo: " + r.motivo : "");
+    case "PREMIOS": return r.lista.length + " prêmio(s): " + r.lista.map((p, i) => (i + 1) + "º " + C.descPremio(p)).join(" | ") + (r.motivo ? " · motivo: " + r.motivo : "");
+    case "RESERVA": return "Reserva dos bilhetes " + tk() + " para " + nomeP(r.comprador);
+    case "PAGAMENTO": return "Pagamento dos bilhetes " + tk() + " · " + nomeP(r.comprador) + " · " + C.parseTickets(r.bilhetes).length + " × " + brl(r.valor_unit_centavos) + " · " + r.forma;
+    case "LIBERACAO": return "Liberação dos bilhetes " + tk() + " · " + r.motivo;
+    case "TRANSFERENCIA": return "Transferência dos bilhetes " + tk() + " para " + nomeP(r.para) + " · " + r.motivo;
+    case "ESTORNO": return "Estorno do registro #" + r.ref_seq + " (" + (C.TIPO_NOME[r.tipo_ref] || r.tipo_ref) + ") · " + r.motivo;
+    case "VENDAS": return (r.acao === "ENCERRAR" ? "Encerramento das vendas · " + r.total_pagos + " pagos · " + brl(r.arrecadacao_centavos) : "Reabertura das vendas · " + r.motivo);
+    case "COMPROMISSO": return "Compromisso do sorteio digital · hash " + shortHash(r.hash_semente);
+    case "SORTEIO": return r.ordem + "º prêmio · " + (r.resultado === "GANHADOR" ? "bilhete " + C.fmtNum(Number(r.bilhete), s.cfg.total) : "sem ganhador") + " · " + C.METODOS[r.metodo];
+    default: return r.tipo;
+  }
+};
+
+/* ---------- identificação, exportação e conferência do portal ---------- */
+C.certameId = (records) => (records && records.length ? String(records[0].hash).slice(0, 12).toUpperCase() : "");
+C.nomePublico = (pub, code) => { const a = pub && pub.apelidos && pub.apelidos[code]; return a ? a + " (" + code + ")" : code; };
+C.exportarPortal = function (L, pub, pessoas) {
+  const s = L.state; if (!s.cfg) throw E("Crie o certame antes de publicar.");
+  pub = pub || {}; const apelidos = {};
+  for (const c in (pessoas || {})) { const p = pessoas[c], a = p && p.apelido ? String(p.apelido).trim().replace(/\s+/g, " ").slice(0, 30) : ""; if (a) apelidos[c] = a; }
+  return { formato: "rifa-portal", versao: 1, gerado_em: new Date().toISOString(), certame_id: C.certameId(L.records), registros: L.records,
+    ancora: { seq: s.seq, cabeca: s.head, raiz_merkle: C.merkleRoot(s.hashes) }, publico: { whatsapp: digits(pub.whatsapp), url: String(pub.url || ""), apelidos } };
+};
+/** confere a forma do arquivo (a cadeia é conferida depois por C.verifyRecords) */
+C.validarPortalObj = function (o) {
+  if (!o || typeof o !== "object" || o.formato !== "rifa-portal") return "O arquivo não é um portal.json deste sistema.";
+  if (o.versao !== 1) return "Versão do portal.json não suportada (" + o.versao + ").";
+  if (!Array.isArray(o.registros) || !o.registros.length) return "O portal.json não tem registros.";
+  if (!o.ancora || typeof o.ancora.cabeca !== "string") return "Âncora ausente no portal.json.";
+  if (o.registros.length > 50000) return "Livro grande demais para o portal.";
+  return "";
+};
+/** confere que a âncora declarada bate com o livro verificado */
+C.conferirAncora = function (o, state) {
+  if (Number(o.ancora.seq) !== state.seq) return "A âncora diz " + o.ancora.seq + " registro(s), mas o livro tem " + state.seq + ".";
+  if (o.ancora.cabeca !== state.head) return "A cabeça de hash da âncora não confere com o livro.";
+  if (o.ancora.raiz_merkle !== C.merkleRoot(state.hashes)) return "A raiz Merkle da âncora não confere com o livro.";
+  if (o.certame_id !== C.certameId(o.registros)) return "O identificador do certame não confere com o primeiro registro.";
+  return "";
+};
+
+/* ---------- varredura de privacidade antes de publicar ---------- */
+const RX = { telefone: /(?:\+?55[\s-]?)?\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}/, cpf: /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/, email: /[^\s@]+@[^\s@]+\.[^\s@]+/ };
+C.scanPrivacidade = function (records, pessoas) {
+  const out = [], nomes = Object.keys(pessoas || {}).map((c) => ({ c, n: String(pessoas[c].nome || "").trim().toLowerCase() })).filter((x) => x.n.length >= 4);
+  const campos = (r) => { const f = [["obs", r.obs], ["motivo", r.motivo]]; if (r.dados) for (const k of ["certame", "beneficiario", "concurso", "regulamento_extra", "pix_titular"]) f.push(["configuração · " + k, r.dados[k]]); if (r.lista) r.lista.forEach((p, i) => f.push(["prêmio " + (i + 1), p.descricao])); if (r.concurso_fed) f.push(["concurso", r.concurso_fed]); if (r.entropia) f.push(["entropia", r.entropia]); return f; };
+  for (const r of records) for (const [campo, v] of campos(r)) {
+    if (!v) continue; const t = String(v);
+    for (const k in RX) if (RX[k].test(t)) out.push({ seq: Number(r.seq), campo, tipo: k, trecho: t.slice(0, 60) });
+    const tl = t.toLowerCase(); for (const x of nomes) if (tl.includes(x.n)) out.push({ seq: Number(r.seq), campo, tipo: "nome de comprador (" + x.c + ")", trecho: t.slice(0, 60) });
+  }
+  return out;
+};
+
+/* ---------- código de pedido de reserva (participante → organizador) ---------- */
+const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+const b64enc = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 3) { const a = u8[i], b = u8[i + 1], c = u8[i + 2], n = (a << 16) | ((b || 0) << 8) | (c || 0); s += B64[(n >> 18) & 63] + B64[(n >> 12) & 63] + (i + 1 < u8.length ? B64[(n >> 6) & 63] : "") + (i + 2 < u8.length ? B64[n & 63] : ""); } return s; };
+const b64dec = (s) => { if (!/^[A-Za-z0-9_-]+$/.test(s) || s.length % 4 === 1) throw E("código de pedido inválido"); const out = []; let buf = 0, bits = 0; for (const ch of s) { buf = (buf << 6) | B64.indexOf(ch); bits += 6; if (bits >= 8) { bits -= 8; out.push((buf >> bits) & 255); buf &= (1 << bits) - 1; } } return Uint8Array.from(out); };
+C.pedidoCodificar = function (o) {
+  const nums = [...new Set(o.bilhetes.map(Number))].sort((a, b) => a - b);
+  if (!nums.length || nums.some((n) => !Number.isInteger(n) || n < 0 || n > 9999)) throw E("Escolha ao menos um bilhete válido.");
+  const nome = String(o.nome || "").trim().replace(/\s+/g, " "); if (nome.length < 2 || nome.length > 60) throw E("Informe seu nome (2 a 60 letras).");
+  const fone = digits(o.fone); if (fone && (fone.length < 10 || fone.length > 13)) throw E("Telefone inválido: use DDD + número.");
+  const body = b64enc(C.utf8(JSON.stringify({ v: 1, id: o.id, n: nums, nome, fone, ts: o.ts || new Date().toISOString() })));
+  return "RFP1-" + body + "-" + C.sha256Hex(C.utf8("RFP1|" + body)).slice(0, 8).toUpperCase();
+};
+C.pedidoDecodificar = function (texto) {
+  const m = /RFP1-[A-Za-z0-9_-]+/.exec(String(texto || "")); if (!m) throw E("Não encontrei um código de pedido (RFP1-…) no texto colado.");
+  const tok = m[0], ck = tok.slice(-8), body = tok.slice(5, -9);
+  if (tok.length < 20 || tok[tok.length - 9] !== "-" || C.sha256Hex(C.utf8("RFP1|" + body)).slice(0, 8).toUpperCase() !== ck) throw E("O código do pedido está incompleto ou foi alterado (soma de verificação não confere). Peça para o participante reenviar.");
+  let o; try { o = JSON.parse(new TextDecoder().decode(b64dec(body))); } catch (_) { throw E("Não consegui ler o conteúdo do pedido."); }
+  if (!o || o.v !== 1 || typeof o.id !== "string" || !Array.isArray(o.n) || !o.n.length || o.n.length > 200 || o.n.some((n) => !Number.isInteger(n) || n < 0 || n > 9999) || typeof o.nome !== "string" || o.nome.length < 2 || o.nome.length > 60 || typeof o.fone !== "string" || o.fone.length > 13) throw E("O pedido tem dados inválidos.");
+  return { id: o.id, bilhetes: [...new Set(o.n)].sort((a, b) => a - b), nome: o.nome, fone: o.fone, ts: String(o.ts || "") };
+};
+C.pedidoMensagem = function (s, o, codigo) {
+  const c = s.cfg, n = o.bilhetes.length, total = BigInt(c.valor_ponto_centavos) * BigInt(n);
+  return "*Pedido de reserva — " + c.certame + "*\nParticipante: " + o.nome + "\nBilhete(s): " + o.bilhetes.map((x) => C.fmtNum(x, c.total)).join(", ") + " (" + n + ")\nValor: " + C.fmtBRL(total) + "\nPIX: " + c.pix_chave + (c.pix_titular ? " (" + c.pix_titular + ")" : "") + "\n\nCódigo do pedido (não altere):\n" + codigo + "\n\nA reserva só vale depois da confirmação do organizador; o bilhete só é válido com o pagamento confirmado.";
+};
+})(RIFA);
+
+</script>
+<script>
+const WASM_B64 = "AGFzbQEAAAABEQNgAX8Bf2ACf38Bf2ACf38AAwUEAAEAAgUDAQAoBxoCBm1lbW9yeQIADXNoYTI1Nl9ibG9ja3MAAwrRBAQnACAAQf8BcUEYdCAAQYD+A3FBCHRyIABBCHZBgP4DcSAAQRh2cnILBwAgACABeAsOAEGABCAAQQJ0aigCAAuPBAEQfwJAA0AgAiABTw0BQQAhAwNAQYAEIANBAnRqIAAgAkEGdCADQQJ0amooAgAQADYCACADQQFqIQMgA0EQSQ0AC0EQIQMDQCADQQ9rEAIhDiADQQJrEAIhDyAOQQcQASAOQRIQAXMgDkEDdnMhECAPQREQASAPQRMQAXMgD0EKdnMhEUGABCADQQJ0aiADQRBrEAIgEGogA0EHaxACIBFqajYCACADQQFqIQMgA0HAAEkNAAtBACgCACEEQQQoAgAhBUEIKAIAIQZBDCgCACEHQRAoAgAhCEEUKAIAIQlBGCgCACEKQRwoAgAhC0EAIQMDQCAIQQYQASAIQQsQAXMgCEEZEAFzIREgCCAJcSAIQX9zIApxcyEOIAsgEWogDkHAACADQQJ0aigCAGpqIAMQAmohDCAEQQIQASAEQQ0QAXMgBEEWEAFzIRAgBCAFcSAEIAZxcyAFIAZxcyEPIBAgD2ohDSAKIQsgCSEKIAghCSAHIAxqIQggBiEHIAUhBiAEIQUgDCANaiEEIANBAWohAyADQcAASQ0AC0EAQQAoAgAgBGo2AgBBBEEEKAIAIAVqNgIAQQhBCCgCACAGajYCAEEMQQwoAgAgB2o2AgBBEEEQKAIAIAhqNgIAQRRBFCgCACAJajYCAEEYQRgoAgAgCmo2AgBBHEEcKAIAIAtqNgIAIAJBAWohAgwACwsL";
+(function(){"use strict";
+/* Rifa — kit de interface (DOM seguro: nada de innerHTML) + armazenamento */
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    const v = attrs[k]; if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else if (k.slice(0, 2) === "on" && typeof v === "function") e.addEventListener(k.slice(2), v);
+    else if (k === "value") e.value = v;
+    else if (k === "checked") e.checked = !!v;
+    else if (k === "selected") e.selected = !!v;
+    else if (v === true) e.setAttribute(k, "");
+    else e.setAttribute(k, String(v));
+  }
+  for (const c of kids.flat(Infinity)) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+  return e;
+}
+const $ = id => document.getElementById(id);
+const clear = el => { while (el.firstChild) el.removeChild(el.firstChild); return el; };
+const chip = (t, kind) => h("span", { class: "chip " + (kind || "") }, t);
+
+function toast(msg, kind, ms) {
+  const box = $("toasts"), t = h("div", { class: "toast " + (kind || ""), role: kind === "bad" ? "alert" : "status" }, msg);
+  box.append(t); setTimeout(() => t.remove(), ms || (kind === "bad" ? 9000 : 4500));
+}
+/** janela modal. actions: [{label, kind, onClick(close)}]; onClick pode retornar false para manter aberta */
+function modal(title, body, actions, opts) {
+  opts = opts || {};
+  const dlg = h("dialog", { "aria-label": title });
+  const close = () => { try { dlg.close(); } catch (_) {} dlg.remove(); };
+  const foot = h("div", { class: "df" });
+  for (const a of (actions || [])) {
+    const b = h("button", { class: a.kind || "", type: "button" }, a.label);
+    b.addEventListener("click", async () => {
+      b.disabled = true;
+      try { const r = a.onClick ? await a.onClick(close) : undefined; if (r !== false) close(); }
+      catch (e) { toast(e.message || String(e), "bad"); }
+      finally { b.disabled = false; }
+    });
+    foot.append(b);
+  }
+  dlg.append(h("div", { class: "dh" }, h("h2", { style: { margin: 0 } }, title), h("button", { class: "ghost sm", type: "button", "aria-label": "Fechar", onclick: close }, "✕")),
+    h("div", { class: "db" }, body), actions && actions.length ? foot : null);
+  if (opts.wide) dlg.style.width = "min(1000px, calc(100vw - 24px))";
+  dlg.addEventListener("cancel", () => setTimeout(() => dlg.remove(), 0));
+  document.body.append(dlg); dlg.showModal();
+  return { el: dlg, close };
+}
+function confirmDlg(title, body, okLabel, danger) {
+  return new Promise(res => {
+    let done = false; const fin = v => { if (!done) { done = true; res(v); } };
+    const m = modal(title, typeof body === "string" ? h("p", null, body) : body, [
+      { label: "Cancelar", onClick: () => { fin(false); } },
+      { label: okLabel || "Confirmar", kind: danger ? "danger" : "primary", onClick: () => { fin(true); } }]);
+    m.el.addEventListener("close", () => fin(false));
+  });
+}
+function field(label, control, hint, cls) {
+  const id = control.id || ("f" + Math.random().toString(36).slice(2, 8)); control.id = id;
+  return h("div", { class: "field " + (cls || "") }, h("label", { for: id }, label), control, hint ? h("div", { class: "hint" }, hint) : null);
+}
+const input = (o) => h("input", Object.assign({ type: "text", autocomplete: "off" }, o || {}));
+const decInput = (o) => h("input", Object.assign({ type: "text", inputmode: "decimal", autocomplete: "off", placeholder: "0,00" }, o || {}));
+function select(options, value, attrs) {
+  return h("select", attrs || {}, options.map(o => { const v = typeof o === "object" ? o.v : o, t = typeof o === "object" ? o.t : o; return h("option", { value: v, selected: String(v) === String(value) }, t); }));
+}
+function downloadBlob(name, blob) {
+  const url = URL.createObjectURL(blob), a = h("a", { href: url, download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast("Copiado.", "ok", 2000); return true; } catch (_) {}
+  const ta = h("textarea", { style: { position: "fixed", opacity: 0 } }); ta.value = t; document.body.append(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (_) {} ta.remove(); toast(ok ? "Copiado." : "Não foi possível copiar — selecione e copie manualmente.", ok ? "ok" : "bad", 2500); return ok;
+}
+const csvCell = v => { const s = String(v == null ? "" : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const toCSV = (cols, rows) => "﻿" + [cols.map(csvCell).join(";")].concat(rows.map(r => r.map(csvCell).join(";"))).join("\r\n");
+
+/** tabela com ordenação (botões nos cabeçalhos, aria-sort) e paginação */
+function dataTable(o) {
+  const st = { sort: o.sort == null ? -1 : o.sort, asc: !!o.asc, page: 0 }, ps = o.pageSize || 50;
+  let rows = o.rows || [];
+  const wrap = h("div"), table = h("table", { class: "t" }), thead = h("thead"), tbody = h("tbody"), pager = h("div", { class: "pager" });
+  const tr = h("tr"); thead.append(tr);
+  o.cols.forEach((c, i) => {
+    const th = h("th", { class: c.cls || "", scope: "col" });
+    if (c.v) { const b = h("button", { type: "button", onclick: () => { if (st.sort === i) st.asc = !st.asc; else { st.sort = i; st.asc = true; } st.page = 0; draw(); } }, c.h, h("span", { "aria-hidden": "true" }, " ↕")); th.append(b); th._b = b; } else th.append(c.h);
+    tr.append(th); c._th = th;
+  });
+  table.append(thead, tbody); if (o.foot) table.append(h("tfoot", null, o.foot));
+  wrap.append(h("div", { class: "tablewrap" }, table), pager);
+  function draw() {
+    let list = rows.slice();
+    if (st.sort >= 0 && o.cols[st.sort] && o.cols[st.sort].v) {
+      const f = o.cols[st.sort].v, d = st.asc ? 1 : -1;
+      list.sort((a, b) => { const x = f(a), y = f(b); return (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y), "pt-BR", { numeric: true })) * d; });
+    }
+    o.cols.forEach((c, i) => { c._th.setAttribute("aria-sort", st.sort === i ? (st.asc ? "ascending" : "descending") : "none"); });
+    const pages = Math.max(1, Math.ceil(list.length / ps)); if (st.page >= pages) st.page = pages - 1;
+    clear(tbody);
+    if (!list.length) tbody.append(h("tr", null, h("td", { class: "empty", colspan: o.cols.length }, o.empty || "Nada para mostrar.")));
+    for (const r of list.slice(st.page * ps, st.page * ps + ps)) {
+      const row = h("tr", { class: (o.onRow ? "click " : "") + (o.rowClass ? o.rowClass(r) : ""), tabindex: o.onRow ? "0" : null });
+      if (o.onRow) { row.addEventListener("click", () => o.onRow(r)); row.addEventListener("keydown", e => { if (e.key === "Enter") o.onRow(r); }); }
+      for (const c of o.cols) row.append(h("td", { class: c.cls || "" }, c.r(r)));
+      tbody.append(row);
+    }
+    clear(pager);
+    if (list.length > ps) pager.append(h("span", null, (st.page * ps + 1) + "–" + Math.min(list.length, st.page * ps + ps) + " de " + list.length),
+      h("button", { class: "sm", type: "button", disabled: st.page === 0, onclick: () => { st.page--; draw(); } }, "‹ Anterior"),
+      h("button", { class: "sm", type: "button", disabled: st.page >= pages - 1, onclick: () => { st.page++; draw(); } }, "Próxima ›"));
+  }
+  draw();
+  return { el: wrap, setRows(r) { rows = r; draw(); }, getRows: () => rows };
+}
+function tabs(items, current, onPick) {
+  const bar = h("div", { class: "tabs", role: "tablist" });
+  items.forEach(([k, t]) => bar.append(h("button", { type: "button", role: "tab", "aria-selected": k === current ? "true" : "false", onclick: () => onPick(k) }, t)));
+  return bar;
+}
+function kv(pairs) { const d = h("dl", { class: "kv" }); for (const [k, v] of pairs) d.append(h("dt", null, k), h("dd", null, v == null || v === "" ? "—" : v)); return d; }
+const shortHash = x => x ? x.slice(0, 10) + "…" + x.slice(-6) : "";
+const fmtTS = iso => { try { return new Date(iso).toLocaleString("pt-BR"); } catch (_) { return iso; } };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const nextFrame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+
+/* ---------- armazenamento: IndexedDB com autorreparo e reserva em localStorage ---------- */
+const Store = (() => {
+  const NAME = "rifa_v1", ST = ["mov", "kv"], LSP = "rifa1:"; let db = null; const api = { mode: "idb" };
+  const lsk = (s, k) => LSP + s + ":" + k;
+  api.open = () => new Promise((res) => {
+    const fallback = () => { api.mode = "ls"; res(); };
+    try {
+      if (!window.indexedDB) return fallback();
+      const go = (ver) => {
+        const rq = ver ? indexedDB.open(NAME, ver) : indexedDB.open(NAME);
+        rq.onupgradeneeded = () => { const d = rq.result; for (const s of ST) if (!d.objectStoreNames.contains(s)) d.createObjectStore(s); };
+        rq.onerror = fallback; rq.onblocked = fallback;
+        rq.onsuccess = () => { const d = rq.result; if (ST.every((s) => d.objectStoreNames.contains(s))) { db = d; api.mode = "idb"; res(); } else { const v = d.version + 1; d.close(); go(v); } };
+      };
+      go(0);
+    } catch (e) { fallback(); }
+  });
+  api.get = (s, k) => api.mode === "ls" ? Promise.resolve((() => { try { const v = localStorage.getItem(lsk(s, k)); return v == null ? undefined : JSON.parse(v); } catch (e) { return undefined; } })()) : new Promise((res, rej) => { const r = db.transaction(s).objectStore(s).get(k); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  api.putMany = (s, pairs) => api.mode === "ls" ? Promise.resolve().then(() => { for (const [k, v] of pairs) localStorage.setItem(lsk(s, k), JSON.stringify(v)); }) : new Promise((res, rej) => { const t = db.transaction(s, "readwrite"); for (const [k, v] of pairs) t.objectStore(s).put(v, k); t.oncomplete = () => res(); t.onerror = t.onabort = () => rej(t.error || new Error("Falha ao gravar no navegador")); });
+  api.all = (s) => api.mode === "ls" ? Promise.resolve(Object.keys(localStorage).filter((k) => k.startsWith(LSP + s + ":")).map((k) => ({ k: k.split(":").slice(2).join(":"), v: JSON.parse(localStorage.getItem(k)) })).sort((a, b) => (s === "mov" ? Number(a.k) - Number(b.k) : 0))) : new Promise((res, rej) => { const out = []; const r = db.transaction(s).objectStore(s).openCursor(); r.onsuccess = () => { const c = r.result; if (c) { out.push({ k: c.key, v: c.value }); c.continue(); } else res(out); }; r.onerror = () => rej(r.error); });
+  api.clear = (s) => api.mode === "ls" ? Promise.resolve(Object.keys(localStorage).filter((k) => k.startsWith(LSP + s + ":")).forEach((k) => localStorage.removeItem(k))) : new Promise((res, rej) => { const t = db.transaction(s, "readwrite"); t.objectStore(s).clear(); t.oncomplete = () => res(); t.onerror = () => rej(t.error); });
+  return api;
+})();
+
+/* Rifa — PORTAL PÚBLICO (somente leitura): verifica o livro publicado no próprio navegador e permite enviar um pedido de reserva */
+const C = RIFA, E = C.E;
+const P = { L: new C.Ledger(), obj: null, erro: "", aviso: "", ok: false, view: "participar", sel: new Set(), filtro: "", fstat: "", pagina: 0, carregando: true, origem: "" };
+const st = () => P.L.state;
+const VIEWS = [["participar", "Participar"], ["resultados", "Resultados"], ["regulamento", "Regulamento"], ["livro", "Livro público"]];
+const FALLBACK_WA = "61999487649";
+const brl = (c) => C.fmtBRL(c), fnum = (n) => C.fmtNum(n, st().cfg.total), digitos = (s) => String(s || "").replace(/\D/g, "");
+const limpaMsg = (m) => String(m || "").replace(/^#\d+ [A-Z]+: /, "");
+const fmtDH = (l) => (l && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(l) ? C.fmtDate(l.slice(0, 10)) + " às " + l.slice(11, 16) : "a definir");
+const nomePub = (c) => C.nomePublico(P.obj && P.obj.publico, c);
+const docCodigo = (r) => C.docCode([r.hash]);
+const waNumero = () => { const d = digitos(P.obj && P.obj.publico && P.obj.publico.whatsapp) || FALLBACK_WA; return d.length === 10 || d.length === 11 ? "55" + d : d; };
+const statusTxt = { SEM_CONFIG: "Sem certame", ABERTA: "Vendas abertas", VENDAS_ENCERRADAS: "Vendas encerradas", SORTEADA: "Apurada" };
+const STAT_ICON = { livre: "", reservado: "R", pago: "✓", premio: "★" }, STAT_NOME = { livre: "livre", reservado: "reservado, aguardando pagamento", pago: "pago", premio: "premiado" };
+const celulaStatus = (n) => { const t = st().t[n]; if (!t) return "livre"; if (t.premio != null) return "premio"; return t.st === "PAGO" ? "pago" : "reservado"; };
+const kpi = (l, v, s) => h("div", { class: "kpi" }, h("div", { class: "l" }, l), h("div", { class: "v" }, v), h("div", { class: "s" }, s || " "));
+const legenda = (k, t) => h("span", { class: "lg" }, h("i", { class: "tk mini " + k }, STAT_ICON[k]), t);
+const run = async (fn) => { try { return await fn(); } catch (e) { toast(limpaMsg(e.message || e), "bad"); return false; } };
+
+/* ---------- carga e verificação ---------- */
+async function aplicar(obj, origem) {
+  P.ok = false; P.erro = ""; P.aviso = ""; P.rejeitado = true;
+  const e1 = C.validarPortalObj(obj); if (e1) { P.erro = e1; return; }
+  const v = await C.verifyRecords(JSON.parse(JSON.stringify(obj.registros)));
+  if (!v.ok) { P.erro = "O livro publicado NÃO passa na verificação (registro #" + v.errors[0].seq + ": " + limpaMsg(v.errors[0].msg) + "). Não use esta página para reservar; avise o organizador."; return; }
+  const e2 = C.conferirAncora(obj, v.state); if (e2) { P.erro = "O livro é íntegro, mas a âncora publicada não confere: " + e2 + " Avise o organizador."; return; }
+  P.L.load(obj.registros); P.obj = obj; P.ok = true; P.rejeitado = false; P.origem = origem || ""; P.sel.clear();
+  if (!P.L.state.cfg) { P.ok = false; P.erro = "O livro ainda não tem o certame configurado."; }
+}
+async function carregar() {
+  P.carregando = true; P.rejeitado = false; render();
+  try {
+    if (location.protocol === "file:") throw E("Esta página foi aberta como arquivo local, onde o navegador bloqueia a leitura do portal.json. Use o endereço publicado no GitHub Pages ou carregue o arquivo manualmente abaixo.");
+    const r = await fetch("portal.json?v=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) throw E("O livro ainda não foi publicado (portal.json não encontrado, código " + r.status + ").");
+    await aplicar(await r.json(), "publicado");
+  } catch (e) { P.erro = limpaMsg(e.message || e); P.ok = false; }
+  P.carregando = false; render();
+}
+function carregarArquivo() {
+  const f = h("input", { type: "file", accept: ".json,application/json", style: { display: "none" } }); document.body.append(f);
+  f.addEventListener("change", () => { const file = f.files[0]; f.remove(); if (!file) return; const rd = new FileReader(); rd.onerror = () => toast("Não foi possível ler o arquivo.", "bad");
+    rd.onload = () => run(async () => { let o; try { o = JSON.parse(rd.result); } catch (_) { throw E("O arquivo não é um JSON válido."); } await aplicar(o, "arquivo local"); render(); }); rd.readAsText(file); });
+  f.click();
 }
 
-// Inicia aplicação
-window.onload = initPortal;
+/* ---------- tema, casca e navegação ---------- */
+function setTema(t) { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("rifa_portal_theme", t); } catch (_) {} }
+function renderShell() {
+  const cfg = P.ok ? st().cfg : null, hdr = $("hdr"); clear(hdr);
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  hdr.append(h("div", { class: "brand" }, h("div", { class: "brand-mark", "aria-hidden": "true" }, "R"), h("div", null, h("h1", null, cfg ? cfg.certame : "Rifa — Ação entre Amigos"), h("small", null, cfg ? "Beneficiário: " + (cfg.beneficiario || "—") : "Portal público de participação e transparência"))),
+    h("div", { class: "opbox" }, cfg ? chip(statusTxt[C.statusCertame(st())], C.statusCertame(st()) === "ABERTA" ? "ok" : "info") : null, P.ok ? chip("Livro verificado ✓", "ok") : null,
+      h("button", { class: "sm", type: "button", onclick: () => { setTema(dark ? "light" : "dark"); renderShell(); } }, dark ? "☀ Tema claro" : "☾ Tema escuro")));
+  const nav = $("nav"); clear(nav); if (P.ok) nav.append(tabs(VIEWS, P.view, (k) => { P.view = k; render(); window.scrollTo(0, 0); }));
+}
+function render() {
+  renderShell(); const v = $("view"); clear(v);
+  if (P.carregando) return v.append(h("div", { class: "card" }, h("p", { class: "live" }, "Carregando e verificando o livro publicado…")));
+  if (!P.ok) return viewErro(v);
+  try { ({ participar: viewParticipar, resultados: viewResultados, regulamento: viewRegulamento, livro: viewLivro })[P.view](v); } catch (e) { v.append(h("div", { class: "alert bad" }, "Erro ao desenhar a tela: " + limpaMsg(e.message))); console.error(e); }
+}
+function viewErro(v) {
+  v.append(h("section", { class: "card" }, h("h2", null, P.rejeitado ? "Não foi possível confiar no livro publicado" : "Livro ainda indisponível"), h("div", { class: "alert " + (P.rejeitado ? "bad" : "warn"), role: "alert" }, P.erro || "Sem dados."),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: carregar }, "Tentar de novo"), h("button", { type: "button", onclick: carregarArquivo }, "Carregar portal.json de um arquivo")),
+    h("p", { class: "hint" }, "Participantes: se esta mensagem persistir, fale com o organizador. Nenhum pedido pode ser feito sem um livro verificado.")));
+}
+
+/* ---------- participar ---------- */
+function pixPayload(total, txid) {
+  const c = st().cfg; if (!c.pix_chave) return null;
+  try { return C.pixPayload({ chave: c.pix_chave, nome: c.pix_titular || c.certame, cidade: c.pix_cidade || "Brasil", valorCentavos: total > 0n ? String(total) : "", txid, descricao: c.certame }); } catch (_) { return null; }
+}
+function pixBox(payload, titulo) {
+  if (!payload) return h("div", { class: "alert warn" }, "O organizador ainda não informou a chave PIX.");
+  let qr = null; try { qr = C.QR.make(payload); } catch (_) {}
+  return h("div", { class: "pixbox" }, qr ? h("div", { class: "qrbox" }, C.QR.toSvg(qr, 190)) : null, h("div", { class: "grow" }, h("div", { class: "hint" }, titulo || "PIX copia e cola"), h("div", { class: "pre" }, payload), h("button", { class: "sm", type: "button", onclick: () => copyText(payload) }, "Copiar código PIX")));
+}
+function viewParticipar(v) {
+  const s = st(), c = s.cfg, cnt = C.contagem(s), arr = C.arrecadacao(s), enc = !!s.vendasEnc;
+  const ger = P.obj.gerado_em ? C.fmtIso(P.obj.gerado_em) : "—";
+  v.append(h("div", { class: "alert info" }, "Situação publicada em ", h("strong", null, ger), " (registro #" + s.seq + "). Reservas feitas depois disso só aparecem quando o organizador publicar de novo; a confirmação final é sempre dele."));
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Sobre este certame"), h("div", { class: "row" }, chip(C.METODOS[c.metodo], "info"), chip("Sorteio: " + fmtDH(c.data_sorteio), "off"))),
+    h("div", { class: "grid g4" }, kpi("Livres", String(cnt.livres), "de " + cnt.total), kpi("Reservados", String(cnt.reservados), "aguardando pagamento"), kpi("Pagos", String(cnt.pagos), "concorrem ao sorteio"), kpi("Valor do bilhete", brl(c.valor_ponto_centavos), "por número"), kpi("Arrecadado", brl(arr), "confirmado")),
+    h("div", { class: "bar", role: "img", "aria-label": cnt.pagos + " de " + cnt.total + " bilhetes pagos" }, h("i", { style: { width: (cnt.total ? Math.round(cnt.pagos * 100 / cnt.total) : 0) + "%" } })),
+    h("h3", null, "Prêmios"), s.premios.length ? h("ol", { class: "premlist" }, s.premios.map((p) => h("li", null, C.descPremio(p, arr)))) : h("p", { class: "muted" }, "Prêmios a definir pelo organizador."),
+    h("p", { class: "hint" }, "Os prêmios podem mudar com motivo registrado; todas as versões ficam no Livro público.")));
+  if (enc) v.append(h("div", { class: "alert warn" }, "As vendas deste certame estão encerradas. Você pode acompanhar a apuração na aba Resultados."));
+  const info = h("span", { class: "muted", "aria-live": "polite" });
+  const filtro = input({ type: "search", placeholder: "Buscar nº…", "aria-label": "Buscar número", oninput: (e) => { P.filtro = e.target.value; P.pagina = 0; desenhaGrade(); } });
+  const fst = select([{ v: "", t: "Todos" }, { v: "livre", t: "Só livres" }, { v: "reservado", t: "Só reservados" }, { v: "pago", t: "Só pagos" }, { v: "premio", t: "Só premiados" }], P.fstat, { "aria-label": "Filtrar", onchange: (e) => { P.fstat = e.target.value; P.pagina = 0; desenhaGrade(); } });
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Escolha seus números"), info),
+    h("div", { class: "row", style: { margin: ".4rem 0" } }, h("div", { class: "grow" }, filtro), h("div", null, fst), h("button", { class: "sm", type: "button", onclick: () => { P.sel.clear(); desenhaGrade(); } }, "Desmarcar todos")),
+    h("div", { class: "legend", "aria-label": "Legenda" }, legenda("livre", "Livre (clique para escolher)"), legenda("reservado", "Reservado (R)"), legenda("pago", "Pago (✓)"), legenda("premio", "Premiado (★)")),
+    h("div", { id: "pgs" }), h("div", { class: "grade", id: "grade", role: "group", "aria-label": "Grade de bilhetes" })));
+  P.info = info;
+  const nome = input({ placeholder: "Seu nome completo ou apelido", maxlength: 60, "aria-label": "Seu nome" }), fone = input({ placeholder: "(61) 9 0000-0000", inputmode: "tel", maxlength: 20, "aria-label": "Seu WhatsApp" });
+  const resumo = h("div", { class: "cart", id: "cart", "aria-live": "polite" });
+  v.append(h("section", { class: "card" }, h("h2", null, "Pedido de reserva"), h("p", { class: "muted" }, "Escolha os números acima, informe seus dados e envie o pedido ao organizador pelo WhatsApp. Seu telefone não é publicado."),
+    h("div", { class: "grid g2" }, field("Seu nome", nome), field("Seu WhatsApp (DDD + número)", fone, "Opcional, mas ajuda o organizador a confirmar com você.")), resumo,
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", disabled: enc, onclick: () => run(() => enviarPedido(nome, fone)) }, "📲 Enviar pedido pelo WhatsApp"), h("button", { type: "button", disabled: enc, onclick: () => run(() => copiarPedido(nome, fone)) }, "Copiar pedido"), h("button", { type: "button", disabled: enc, onclick: () => run(() => baixarPedido(nome, fone)) }, "Baixar pedido (.txt)")),
+    h("div", { class: "alert warn" }, h("strong", null, "Como funciona: "), "o pedido é só uma solicitação. O organizador confere se os números continuam livres, reserva e confirma depois do seu pagamento por PIX. O bilhete só vale com o pagamento confirmado. Guarde o comprovante do PIX.")));
+  P.carrinho = resumo; desenhaGrade();
+}
+function visivel(n) { const f = P.filtro.trim().toLowerCase(), cs = celulaStatus(n); if (P.fstat && cs !== P.fstat) return false; if (!f) return true; return fnum(n).includes(f) || String(n) === f; }
+function desenhaGrade() {
+  const g = $("grade"); if (!g) return; const s = st(), total = Number(s.cfg.total), PG = 500; clear(g);
+  const vis = []; for (let i = 0; i < total; i++) if (visivel(i)) vis.push(i);
+  const pages = Math.max(1, Math.ceil(vis.length / PG)); if (P.pagina >= pages) P.pagina = pages - 1;
+  const pg = $("pgs"); clear(pg); if (pages > 1) pg.append(h("div", { class: "pager" }, h("span", null, "Página " + (P.pagina + 1) + " de " + pages), h("button", { class: "sm", type: "button", disabled: P.pagina === 0, onclick: () => { P.pagina--; desenhaGrade(); } }, "‹ Anterior"), h("button", { class: "sm", type: "button", disabled: P.pagina >= pages - 1, onclick: () => { P.pagina++; desenhaGrade(); } }, "Próxima ›")));
+  const frag = document.createDocumentFragment(), enc = !!s.vendasEnc;
+  for (const n of vis.slice(P.pagina * PG, P.pagina * PG + PG)) {
+    const cs = celulaStatus(n), t = s.t[n], livre = cs === "livre" && !enc, on = P.sel.has(n);
+    const b = h("button", { type: "button", class: "tk " + cs + (on ? " sel" : ""), "data-n": n, "aria-pressed": livre ? (on ? "true" : "false") : null, disabled: !livre, "aria-label": "Número " + fnum(n) + ", " + STAT_NOME[cs] + (t ? ", comprador " + nomePub(t.comp) : ""), title: t ? nomePub(t.comp) : (enc ? "Vendas encerradas" : "Livre") }, h("span", { class: "n" }, fnum(n)), h("span", { class: "ic", "aria-hidden": "true" }, STAT_ICON[cs]));
+    if (livre) b.addEventListener("click", () => { if (P.sel.has(n)) P.sel.delete(n); else P.sel.add(n); b.classList.toggle("sel"); b.setAttribute("aria-pressed", P.sel.has(n) ? "true" : "false"); atualizaCarrinho(); });
+    frag.append(b);
+  }
+  g.append(frag); if (!vis.length) g.append(h("p", { class: "muted" }, "Nenhum número com esse filtro.")); atualizaCarrinho();
+}
+const selArr = () => [...P.sel].sort((a, b) => a - b);
+function atualizaCarrinho() {
+  const s = st(), arr = selArr(), box = P.carrinho, total = BigInt(s.cfg.valor_ponto_centavos) * BigInt(arr.length);
+  if (P.info) P.info.textContent = arr.length ? arr.length + " número(s) escolhido(s)" : "Nenhum número escolhido";
+  if (!box) return; clear(box);
+  box.append(kv([["Números escolhidos", arr.length ? arr.map(fnum).join(", ") : "Nenhum"], ["Quantidade", String(arr.length)], ["Total a pagar", brl(total)]]));
+  if (arr.length) box.append(pixBox(pixPayload(total, "RIFA" + arr.length + "N"), "Pague o total por PIX (copia e cola ou QR) e guarde o comprovante"));
+}
+function dadosPedido(nome, fone) {
+  const arr = selArr(); if (!arr.length) throw E("Clique em pelo menos um número livre na grade.");
+  const o = { id: P.obj.certame_id, bilhetes: arr, nome: nome.value, fone: fone.value };
+  const codigo = C.pedidoCodificar(o), d = C.pedidoDecodificar(codigo); return { codigo, texto: C.pedidoMensagem(st(), d, codigo) };
+}
+async function enviarPedido(nome, fone) {
+  const { texto } = dadosPedido(nome, fone), url = "https://wa.me/" + waNumero() + "?text=" + encodeURIComponent(texto);
+  const a = h("a", { href: url, target: "_blank", rel: "noopener noreferrer" }); document.body.append(a); a.click(); a.remove();
+  toast("Abrindo o WhatsApp do organizador. Envie a mensagem sem alterar o código do pedido.", "ok", 9000);
+}
+async function copiarPedido(nome, fone) { const { texto } = dadosPedido(nome, fone); await copyText(texto); }
+async function baixarPedido(nome, fone) { const { texto, codigo } = dadosPedido(nome, fone); downloadBlob("pedido-reserva-" + codigo.slice(5, 11) + ".txt", new Blob([texto], { type: "text/plain;charset=utf-8" })); toast("Pedido baixado. Envie o arquivo ao organizador.", "ok"); }
+
+/* ---------- resultados ---------- */
+function viewResultados(v) {
+  const s = st(), c = s.cfg, arr = C.arrecadacao(s);
+  v.append(h("section", { class: "card" }, h("h2", null, "Como a apuração é feita"), h("p", null, c.metodo === "FEDERAL" ? "Pelo resultado oficial da Loteria Federal (" + (c.concurso || "concurso a informar") + "): os últimos " + C.padW(Number(c.total)) + " dígitos do número oficial, divididos pelo total de bilhetes (" + c.total + "), indicam o bilhete. " + (c.regra_vazio === "PROXIMO" ? "Se esse bilhete não estiver pago, vale o próximo bilhete pago." : "Se esse bilhete não estiver pago, aguarda-se um novo concurso.") : "Sorteio digital com compromisso: o organizador registrou antes o hash (impressão digital) de uma semente secreta e a revela no sorteio. Qualquer pessoa confere que a semente gera o hash registrado."),
+    s.compromisso ? kv([["Hash da semente (compromisso)", h("span", { class: "mono brk" }, s.compromisso.hash)], ["Registrado em", C.fmtDate(s.compromisso.data) + " · registro #" + s.compromisso.seq]]) : null,
+    h("p", { class: "hint" }, "Seu navegador reaplicou todo o livro, inclusive a conferência de cada apuração. Se alguma estivesse errada, esta página recusaria o livro.")));
+  const box = h("section", { class: "card" }, h("h2", null, "Resultados registrados"));
+  if (!s.sorteios.length && !s.tentativas.length) box.append(h("p", { class: "muted" }, "Nenhuma apuração registrada ainda. Data prevista: " + fmtDH(c.data_sorteio) + "."));
+  else {
+    box.append(dataTable({ rows: s.sorteios, sort: -1, empty: "—", cols: [{ h: "Prêmio", r: (x) => x.ordem + "º" }, { h: "Descrição", r: (x) => C.descPremio(s.premios[x.ordem - 1] || { tipo: "OBJETO", descricao: "(removido)" }, BigInt(x.arrecadacao)) }, { h: "Bilhete", r: (x) => h("strong", null, fnum(x.bilhete)) }, { h: "Ganhador", r: (x) => nomePub(s.t[x.bilhete] && s.t[x.bilhete].comp) }, { h: "Valor", cls: "num", r: (x) => brl(x.premio_valor) }, { h: "Origem", r: (x) => x.metodo === "FEDERAL" ? "Federal " + x.premio_federal + (x.concurso ? " (" + x.concurso + ")" : "") + " → base " + x.numero_base : "Digital · semente revelada" }, { h: "Data", r: (x) => C.fmtDate(x.data) }] }).el);
+    if (s.tentativas.length) box.append(h("h3", null, "Apurações sem ganhador"), h("ul", null, s.tentativas.map((t) => h("li", null, "Registro #" + t.seq + ": " + t.ordem + "º prêmio, número " + t.premio_federal + " — bilhete-base não pago (aguardando novo concurso)."))));
+  }
+  v.append(box);
+}
+
+/* ---------- regulamento ---------- */
+function viewRegulamento(v) {
+  const reg = C.regulamentoTexto(st()), rbox = h("div", { class: "regul" });
+  for (const [t, ps] of reg) { rbox.append(h("h3", null, t)); for (const x of ps) rbox.append(h("p", null, x)); }
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Regulamento"), h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => copyText(reg.map(([t, ps]) => t + "\n" + ps.join("\n")).join("\n\n")) }, "Copiar texto"), h("button", { class: "sm", type: "button", onclick: imprimirRegulamento }, "Imprimir (A4)"))), rbox));
+}
+function imprimirRegulamento() {
+  const c = st().cfg, pp = h("div", { class: "pp" }, h("h1", null, "Regulamento — " + c.certame), h("div", { class: "meta" }, "Emitido em " + new Date().toLocaleString("pt-BR") + " · livro com " + st().seq + " registro(s), cabeça " + st().head.slice(0, 16) + "…"));
+  for (const [t, ps] of C.regulamentoTexto(st())) { pp.append(h("h2", null, t)); for (const x of ps) pp.append(h("p", null, x)); }
+  pp.append(h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável"));
+  const z = $("print-zone"); clear(z); z.append(pp); const fim = () => { clear(z); window.removeEventListener("afterprint", fim); }; window.addEventListener("afterprint", fim); try { window.print(); } catch (_) { toast("Não foi possível abrir a impressão.", "bad"); }
+}
+
+/* ---------- livro público ---------- */
+function detalheRegistro(r) {
+  const s = st(), idx = Number(r.seq) - 1, prova = C.merkleProof(s.hashes, idx), mok = C.merkleVerify(r.hash, prova, C.merkleRoot(s.hashes)), anul = s.anulados[r.seq];
+  modal("Registro #" + r.seq + " — " + (C.TIPO_NOME[r.tipo] || r.tipo), h("div", null, kv([["Documento", C.DOC_NOME[C.KIND[r.tipo]] + " nº " + r.doc_seq + " · código " + docCodigo(r)], ["Data do fato", C.fmtDate(r.data)], ["Gravado em", C.fmtIso(r.registrado_em)], ["O que aconteceu", C.resumoRegistro(s, r, nomePub)], ["Situação atual", anul ? chip("anulado/estornado pelo registro #" + anul, "bad") : chip("em vigor", "ok")]]),
+    h("details", { class: "tec" }, h("summary", null, "Dados técnicos de verificação"), kv([["Hash anterior", h("span", { class: "mono brk" }, r.hash_anterior)], ["Hash deste registro", h("span", { class: "mono brk" }, r.hash)], ["Prova de inclusão (Merkle)", mok ? chip("válida · " + prova.length + (prova.length === 1 ? " passo" : " passos"), "ok") : chip("inválida", "bad")]]))), [{ label: "Fechar" }], { wide: true });
+}
+function viewLivro(v) {
+  const s = st(), out = h("div", { id: "verif" }), o = P.obj;
+  v.append(h("section", { class: "card" }, h("h2", null, "Auditoria do livro"), kv([["Registros", String(s.seq)], ["Identificador do certame", h("span", { class: "mono" }, o.certame_id)], ["Hash da cabeça", h("span", { class: "mono brk" }, s.head)], ["Raiz Merkle", h("span", { class: "mono brk" }, C.merkleRoot(s.hashes))], ["Âncora publicada", chip("confere com o livro", "ok")], ["Motor SHA-256", C.engine === "wasm" ? "WebAssembly (verificado com vetor de teste)" : "JavaScript"], ["Origem dos dados", P.origem === "arquivo local" ? "arquivo local" : "portal.json publicado"], ["Publicado em", o.gerado_em ? C.fmtIso(o.gerado_em) : "—"]]),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: () => run(async () => { clear(out); const bar = h("div", { class: "live" }, "Verificando…"); out.append(bar); const res = await C.verifyRecords(JSON.parse(JSON.stringify(P.obj.registros)), { onProgress: (i, n) => { bar.textContent = "Verificando… " + i + "/" + n; } }); clear(out); out.append(res.ok ? h("div", { class: "alert ok" }, "✓ Cadeia íntegra: " + res.count + " registro(s) recalculados do zero no seu navegador, todas as regras reaplicadas.") : h("div", { class: "alert bad" }, "✗ Falha no registro #" + res.errors[0].seq + ": " + limpaMsg(res.errors[0].msg))); }) }, "Verificar de novo agora"),
+      h("button", { type: "button", onclick: () => downloadBlob("portal.json", new Blob([JSON.stringify(P.obj)], { type: "application/json" })) }, "Baixar o livro (portal.json)"), h("button", { type: "button", onclick: () => copyText("RIFA-ÂNCORA · " + s.cfg.certame + " · registros=" + s.seq + " · cabeça=" + s.head + " · raiz-merkle=" + C.merkleRoot(s.hashes)) }, "Copiar âncora")), out,
+    h("p", { class: "hint" }, "O histórico de versões deste site no GitHub também é público: cada publicação do livro é um commit com data, o que dificulta apagar ou reescrever o passado sem deixar rastro.")));
+  const filtro = input({ type: "search", placeholder: "Buscar no livro…", "aria-label": "Buscar no livro" }), tipo = select([{ v: "", t: "Todos os tipos" }].concat(Object.keys(C.TIPO_NOME).map((k) => ({ v: k, t: C.TIPO_NOME[k] }))), "", { "aria-label": "Tipo" });
+  const todos = s.movs.slice().reverse(); let dt; const aplica = () => { const f = filtro.value.trim().toLowerCase(); dt.setRows(todos.filter((r) => (!tipo.value || r.tipo === tipo.value) && (!f || (C.resumoRegistro(s, r, nomePub) + " " + r.seq + " " + docCodigo(r)).toLowerCase().includes(f)))); };
+  dt = dataTable({ rows: todos, sort: -1, pageSize: 40, empty: "Sem registros.", onRow: detalheRegistro, rowClass: (r) => s.anulados[r.seq] ? "void" : "", cols: [{ h: "Nº", cls: "num", v: (r) => Number(r.seq), r: (r) => r.seq }, { h: "Data", v: (r) => r.data, r: (r) => C.fmtDate(r.data) }, { h: "Tipo", r: (r) => chip(C.TIPO_NOME[r.tipo] || r.tipo, r.tipo === "ESTORNO" ? "bad" : r.tipo === "SORTEIO" ? "info" : r.tipo === "PAGAMENTO" ? "ok" : "off") }, { h: "Documento", r: (r) => h("span", { class: "mono" }, docCodigo(r)) }, { h: "Resumo", r: (r) => C.resumoRegistro(s, r, nomePub) }, { h: "Hash", r: (r) => h("span", { class: "mono" }, shortHash(r.hash)) }] });
+  filtro.addEventListener("input", aplica); tipo.addEventListener("change", aplica);
+  v.append(h("section", { class: "card" }, h("h2", null, "Registros (mais recente primeiro)"), h("div", { class: "row" }, h("div", { class: "grow" }, filtro), tipo), dt.el));
+}
+
+/* ---------- apoio e inicialização ---------- */
+function apoio() {
+  let payload = null; try { payload = C.pixPayload({ chave: "61999487649", nome: "Carlos Alberto Reis", cidade: "Brasilia", txid: "APOIORIFA" }); } catch (_) {}
+  modal("Apoio e sustentabilidade", h("div", null, h("p", null, "Este portal é gratuito, sem anúncios e sem rastreadores. Se ajudou, você pode apoiar o desenvolvimento via PIX (chave celular):"), h("p", null, h("strong", { class: "mono" }, "61999487649"), " — Carlos Alberto Reis"), pixBox(payload, "PIX de apoio ao projeto"), h("p", { class: "hint" }, "© Carlos Alberto Reis 2026")), [{ label: "Fechar" }]);
+}
+async function boot() {
+  try { await C.initWasm(WASM_B64); } catch (_) {}
+  const b = $("btn-apoio"); if (b) b.addEventListener("click", apoio);
+  await carregar();
+}
+boot();
+
+})();
 </script>
 </body>
 </html>
