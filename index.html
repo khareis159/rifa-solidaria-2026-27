@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
-<title>Rifa — Portal de participação</title>
+<title>Rifa — Ação entre Amigos</title>
 <meta name="description" content="Rifa / ação entre amigos com livro-razão verificável, sorteio transparente e bilhetes gráficos em alta resolução. © Carlos Alberto Reis 2026.">
 <script>
-(function(){var t=null;try{t=localStorage.getItem("rifa_portal_theme")}catch(e){}
+(function(){var t=null;try{t=localStorage.getItem("rifa_theme")}catch(e){}
 if(!t){t=(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light"}
 document.documentElement.setAttribute("data-theme",t)})();
 </script>
@@ -134,6 +134,14 @@ details.anular{margin-top:1rem;border-top:1px dashed var(--border);padding-top:.
 .cart{margin:.6rem 0}
 .tk:disabled{opacity:1;cursor:default}
 
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem;margin:.5rem 0}
+.foto{margin:0;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--card)}
+.foto figcaption{padding:.4rem .6rem;font-size:.9rem}
+.fslot{min-height:140px;display:flex;align-items:center;justify-content:center;background:var(--soft)}
+.fslot img,.foto-grande{width:100%;height:auto;display:block;max-height:75vh;object-fit:contain}
+.fbtn{border:0;padding:0;background:none;width:100%;cursor:zoom-in;min-height:0}
+.thumb{width:72px;height:54px;object-fit:cover;border-radius:6px;border:1px solid var(--bd)}
+
 </style>
 </head>
 <body>
@@ -143,7 +151,7 @@ details.anular{margin-top:1rem;border-top:1px dashed var(--border);padding-top:.
 <div id="banner" class="no-print"></div>
 <main id="view" tabindex="-1"></main>
 <footer class="app-footer no-print">
-  <div>© Carlos Alberto Reis 2026 · Portal público · livro verificável no seu navegador</div>
+  <div>© Carlos Alberto Reis 2026 · Rifa — Ação entre Amigos · livro verificável</div>
   <div><button class="link" id="btn-apoio" type="button">Apoio e sustentabilidade · PIX 61999487649</button></div>
 </footer>
 <div id="toasts" class="no-print" aria-live="polite" role="status"></div>
@@ -695,7 +703,7 @@ C.exportarPortal = function (L, pub, pessoas) {
   pub = pub || {}; const apelidos = {};
   for (const c in (pessoas || {})) { const p = pessoas[c], a = p && p.apelido ? String(p.apelido).trim().replace(/\s+/g, " ").slice(0, 30) : ""; if (a) apelidos[c] = a; }
   return { formato: "rifa-portal", versao: 1, gerado_em: new Date().toISOString(), certame_id: C.certameId(L.records), registros: L.records,
-    ancora: { seq: s.seq, cabeca: s.head, raiz_merkle: C.merkleRoot(s.hashes) }, publico: { whatsapp: digits(pub.whatsapp), url: String(pub.url || ""), apelidos } };
+    ancora: { seq: s.seq, cabeca: s.head, raiz_merkle: C.merkleRoot(s.hashes) }, publico: Object.assign({ whatsapp: digits(pub.whatsapp), url: String(pub.url || ""), apelidos }, C.publicoExtra ? C.publicoExtra(pub) : {}) };
 };
 /** confere a forma do arquivo (a cadeia é conferida depois por C.verifyRecords) */
 C.validarPortalObj = function (o) {
@@ -704,6 +712,7 @@ C.validarPortalObj = function (o) {
   if (!Array.isArray(o.registros) || !o.registros.length) return "O portal.json não tem registros.";
   if (!o.ancora || typeof o.ancora.cabeca !== "string") return "Âncora ausente no portal.json.";
   if (o.registros.length > 50000) return "Livro grande demais para o portal.";
+  const ep = C.validarPublicoObj ? C.validarPublicoObj(o.publico) : ""; if (ep) return "Dados públicos inválidos no portal.json: " + ep;
   return "";
 };
 /** confere que a âncora declarada bate com o livro verificado */
@@ -751,6 +760,75 @@ C.pedidoDecodificar = function (texto) {
 C.pedidoMensagem = function (s, o, codigo) {
   const c = s.cfg, n = o.bilhetes.length, total = BigInt(c.valor_ponto_centavos) * BigInt(n);
   return "*Pedido de reserva — " + c.certame + "*\nParticipante: " + o.nome + "\nBilhete(s): " + o.bilhetes.map((x) => C.fmtNum(x, c.total)).join(", ") + " (" + n + ")\nValor: " + C.fmtBRL(total) + "\nPIX: " + c.pix_chave + (c.pix_titular ? " (" + c.pix_titular + ")" : "") + "\n\nCódigo do pedido (não altere):\n" + codigo + "\n\nA reserva só vale depois da confirmação do organizador; o bilhete só é válido com o pagamento confirmado.";
+};
+})(RIFA);
+
+/* Rifa — núcleo 5: transmissão ao vivo, vídeo e fotos dos prêmios (dados públicos do portal), agenda .ics */
+(function (C) {
+"use strict";
+const E = C.E;
+const PLAT = [[/(^|\.)youtube\.com$|(^|\.)youtu\.be$/, "YouTube"], [/(^|\.)facebook\.com$|(^|\.)fb\.watch$|(^|\.)fb\.com$/, "Facebook"], [/(^|\.)instagram\.com$/, "Instagram"], [/(^|\.)tiktok\.com$/, "TikTok"], [/(^|\.)twitch\.tv$/, "Twitch"], [/(^|\.)kick\.com$/, "Kick"], [/(^|\.)whatsapp\.com$/, "WhatsApp"], [/(^|\.)t\.me$/, "Telegram"], [/(^|\.)meet\.google\.com$/, "Google Meet"], [/(^|\.)drive\.google\.com$/, "Google Drive"], [/(^|\.)zoom\.us$/, "Zoom"], [/(^|\.)vimeo\.com$/, "Vimeo"]];
+const RX = [/(?:\+?55[\s-]?)?\(?\d{2}\)?[\s-]?9?\d{4}[\s-]?\d{4}/, /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/, /[^\s@]+@[^\s@]+\.[^\s@]+/];
+/** devolve o link normalizado ("" se vazio) ou lança erro humano; só https, sem usuário/senha */
+C.validarLink = function (u) {
+  u = String(u || "").trim(); if (!u) return "";
+  if (u.length > 300) throw E("Link longo demais (máximo 300 caracteres).");
+  let x; try { x = new URL(u); } catch (_) { throw E("Link inválido. Cole o endereço completo, começando com https://"); }
+  if (x.protocol !== "https:") throw E("O link precisa começar com https:// (links sem https são recusados por segurança).");
+  if (x.username || x.password) throw E("O link não pode conter usuário ou senha.");
+  if (!/\./.test(x.hostname)) throw E("Endereço do link inválido.");
+  return x.href;
+};
+C.plataformaLink = function (u) { try { const h = new URL(u).hostname.toLowerCase(); for (const [rx, n] of PLAT) if (rx.test(h)) return n; return h.replace(/^www\./, ""); } catch (_) { return ""; } };
+const txt = (s, max, nome) => { s = String(s || "").trim().replace(/\s+/g, " "); if (s.length > max) throw E(nome + ": máximo " + max + " caracteres."); return s; };
+const RXARQ = /^midia-[a-z0-9-]{1,60}\.(jpg|png|webp)$/;
+/** higieniza e valida a parte pública extra (transmissão, vídeo, fotos). Lança erro humano. */
+C.publicoExtra = function (pub) {
+  pub = pub || {}; const out = {};
+  const tu = C.validarLink(pub.transmissao_url); if (tu) out.transmissao = { url: tu, plataforma: C.plataformaLink(tu), aviso: txt(pub.transmissao_aviso, 160, "Aviso da transmissão") };
+  const vu = C.validarLink(pub.video_url); if (vu) out.video = { url: vu, plataforma: C.plataformaLink(vu), legenda: txt(pub.video_legenda, 120, "Legenda do vídeo") };
+  const m = Array.isArray(pub.midia) ? pub.midia : []; if (m.length > 8) throw E("No máximo 8 fotos.");
+  out.midia = m.map((x, i) => {
+    if (!RXARQ.test(String(x.arquivo))) throw E("Foto " + (i + 1) + ": nome de arquivo inválido.");
+    if (!/^[0-9a-f]{64}$/.test(String(x.sha256))) throw E("Foto " + (i + 1) + ": impressão digital inválida.");
+    const bytes = Number(x.bytes), premio = Number(x.premio); if (!Number.isInteger(bytes) || bytes < 1 || bytes > 600000) throw E("Foto " + (i + 1) + ": tamanho inválido (máximo 600 KB).");
+    if (!Number.isInteger(premio) || premio < 0 || premio > 10) throw E("Foto " + (i + 1) + ": prêmio inválido.");
+    const legenda = txt(x.legenda, 120, "Legenda da foto " + (i + 1)); if (legenda.length < 3) throw E("Foto " + (i + 1) + ": escreva uma legenda curta (descreve a foto para quem não enxerga bem).");
+    return { arquivo: x.arquivo, sha256: x.sha256, bytes, premio, legenda, w: Number(x.w) || 0, h: Number(x.h) || 0 };
+  });
+  return out;
+};
+/** versão defensiva para o portal: devolve "" se estiver tudo certo, ou o erro */
+C.validarPublicoObj = function (p) {
+  if (!p || typeof p !== "object") return "";
+  try {
+    const a = { transmissao_url: p.transmissao && p.transmissao.url, transmissao_aviso: p.transmissao && p.transmissao.aviso, video_url: p.video && p.video.url, video_legenda: p.video && p.video.legenda, midia: p.midia };
+    C.publicoExtra(a); return "";
+  } catch (e) { return String(e.message || e); }
+};
+/** avisos de privacidade nos textos públicos extras */
+C.scanPublico = function (pub) {
+  const out = [], campos = [["aviso da transmissão", pub && pub.transmissao_aviso], ["legenda do vídeo", pub && pub.video_legenda]];
+  ((pub && pub.midia) || []).forEach((x, i) => campos.push(["legenda da foto " + (i + 1), x.legenda]));
+  for (const [campo, v] of campos) if (v) for (const rx of RX) if (rx.test(String(v))) { out.push({ campo, trecho: String(v).slice(0, 60) }); break; }
+  return out;
+};
+/** texto de contagem regressiva; "agora" é um Date (para teste) */
+C.faltam = function (dataLocal, agora) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(dataLocal || "")); if (!m) return "";
+  const alvo = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]), ms = alvo - (agora || new Date());
+  if (ms <= -6 * 3600e3) return "O horário do sorteio já passou."; if (ms <= 0) return "O sorteio está acontecendo agora ou acabou de começar.";
+  const min = Math.floor(ms / 60000), d = Math.floor(min / 1440), h = Math.floor((min % 1440) / 60), mi = min % 60;
+  if (d >= 1) return "Faltam " + d + (d === 1 ? " dia" : " dias") + (h ? " e " + h + " h" : "") + " para o sorteio.";
+  if (h >= 1) return "Faltam " + h + " h" + (mi ? " e " + mi + " min" : "") + " para o sorteio."; return "Faltam " + mi + " min para o sorteio.";
+};
+/** arquivo de agenda (.ics) do sorteio; horário "flutuante" (hora local de quem abrir) */
+C.ics = function (cfg, certameId, url, agoraIso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(cfg.data_sorteio || "")); if (!m) return "";
+  const esc = (s) => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+  const ini = m[1] + m[2] + m[3] + "T" + m[4] + m[5] + "00", f = new Date(+m[1], +m[2] - 1, +m[3], +m[4] + 1, +m[5]), p = (n) => String(n).padStart(2, "0"), fim = f.getFullYear() + p(f.getMonth() + 1) + p(f.getDate()) + "T" + p(f.getHours()) + p(f.getMinutes()) + "00";
+  const st = (agoraIso || new Date().toISOString()).replace(/[-:]/g, "").replace(/\.\d+/, "");
+  return ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Carlos Alberto Reis//Rifa//PT", "BEGIN:VEVENT", "UID:" + certameId + "@rifa", "DTSTAMP:" + st, "DTSTART:" + ini, "DTEND:" + fim, "SUMMARY:" + esc("Sorteio — " + cfg.certame), "DESCRIPTION:" + esc("Apuração do certame " + cfg.certame + (url ? ". Acompanhe em " + url : "")), url ? "URL:" + url : null, "END:VEVENT", "END:VCALENDAR"].filter(Boolean).join("\r\n") + "\r\n";
 };
 })(RIFA);
 
@@ -907,203 +985,894 @@ const Store = (() => {
   return api;
 })();
 
-/* Rifa — PORTAL PÚBLICO (somente leitura): verifica o livro publicado no próprio navegador e permite enviar um pedido de reserva */
+/* Rifa — interface 1: estado, persistência, casca, painel (grade de bilhetes) e ações de venda */
 const C = RIFA, E = C.E;
-const P = { L: new C.Ledger(), obj: null, erro: "", aviso: "", ok: false, view: "participar", sel: new Set(), filtro: "", fstat: "", pagina: 0, carregando: true, origem: "" };
-const st = () => P.L.state;
-const VIEWS = [["participar", "Participar"], ["resultados", "Resultados"], ["regulamento", "Regulamento"], ["livro", "Livro público"]];
-const FALLBACK_WA = "61999487649";
-const brl = (c) => C.fmtBRL(c), fnum = (n) => C.fmtNum(n, st().cfg.total), digitos = (s) => String(s || "").replace(/\D/g, "");
-const limpaMsg = (m) => String(m || "").replace(/^#\d+ [A-Z]+: /, "");
+const A = { L: new C.Ledger(), pessoas: {}, segredo: null, view: "painel", sel: new Set(), filtro: "", fstat: "", pagina: 0, showFone: false, erroCarga: null, avisoAncora: null };
+const st = () => A.L.state;
+const VIEWS = [["painel", "Painel"], ["compradores", "Compradores"], ["premios", "Prêmios e regulamento"], ["sorteio", "Sorteio"], ["livro", "Livro e auditoria"], ["relatorios", "Relatórios"], ["publicar", "Publicar"], ["ajustes", "Ajustes"]];
+const fnum = (n) => C.fmtNum(n, st().cfg.total);
+const brl = (c) => C.fmtBRL(c);
+const hoje = () => C.todayLocal();
 const fmtDH = (l) => (l && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(l) ? C.fmtDate(l.slice(0, 10)) + " às " + l.slice(11, 16) : "a definir");
-const nomePub = (c) => C.nomePublico(P.obj && P.obj.publico, c);
-const docCodigo = (r) => C.docCode([r.hash]);
-const waNumero = () => { const d = digitos(P.obj && P.obj.publico && P.obj.publico.whatsapp) || FALLBACK_WA; return d.length === 10 || d.length === 11 ? "55" + d : d; };
+const limpaMsg = (m) => String(m || "").replace(/^#\d+ [A-Z]+: /, "");
+const digitos = (s) => String(s || "").replace(/\D/g, "");
+const nomeP = (c) => (A.pessoas[c] && A.pessoas[c].nome) || c || "—";
+const fmtFone = (f) => { const d = digitos(f); if (d.length === 11) return "(" + d.slice(0, 2) + ") " + d.slice(2, 7) + "-" + d.slice(7); if (d.length === 10) return "(" + d.slice(0, 2) + ") " + d.slice(2, 6) + "-" + d.slice(6); return d || ""; };
+const maskFone = (f) => { const d = digitos(f); if (!d) return "—"; return A.showFone ? fmtFone(f) : (d.length > 4 ? "•••• " + d.slice(-4) : d); };
+const proxCodigo = () => { let m = 0; for (const k in A.pessoas) { const n = Number(k.slice(4)); if (n > m) m = n; } return "CMP-" + String(m + 1).padStart(4, "0"); };
 const statusTxt = { SEM_CONFIG: "Sem certame", ABERTA: "Vendas abertas", VENDAS_ENCERRADAS: "Vendas encerradas", SORTEADA: "Apurada" };
-const STAT_ICON = { livre: "", reservado: "R", pago: "✓", premio: "★" }, STAT_NOME = { livre: "livre", reservado: "reservado, aguardando pagamento", pago: "pago", premio: "premiado" };
-const celulaStatus = (n) => { const t = st().t[n]; if (!t) return "livre"; if (t.premio != null) return "premio"; return t.st === "PAGO" ? "pago" : "reservado"; };
-const kpi = (l, v, s) => h("div", { class: "kpi" }, h("div", { class: "l" }, l), h("div", { class: "v" }, v), h("div", { class: "s" }, s || " "));
-const legenda = (k, t) => h("span", { class: "lg" }, h("i", { class: "tk mini " + k }, STAT_ICON[k]), t);
-const run = async (fn) => { try { return await fn(); } catch (e) { toast(limpaMsg(e.message || e), "bad"); return false; } };
 
-/* ---------- carga e verificação ---------- */
-async function aplicar(obj, origem) {
-  P.ok = false; P.erro = ""; P.aviso = ""; P.rejeitado = true;
-  const e1 = C.validarPortalObj(obj); if (e1) { P.erro = e1; return; }
-  const v = await C.verifyRecords(JSON.parse(JSON.stringify(obj.registros)));
-  if (!v.ok) { P.erro = "O livro publicado NÃO passa na verificação (registro #" + v.errors[0].seq + ": " + limpaMsg(v.errors[0].msg) + "). Não use esta página para reservar; avise o organizador."; return; }
-  const e2 = C.conferirAncora(obj, v.state); if (e2) { P.erro = "O livro é íntegro, mas a âncora publicada não confere: " + e2 + " Avise o organizador."; return; }
-  P.L.load(obj.registros); P.obj = obj; P.ok = true; P.rejeitado = false; P.origem = origem || ""; P.sel.clear();
-  if (!P.L.state.cfg) { P.ok = false; P.erro = "O livro ainda não tem o certame configurado."; }
+/* ---------- gravação: tudo ou nada ---------- */
+async function gravarRegistros(recs) {
+  await Store.putMany("mov", recs.map((r) => [Number(r.seq), r]));
+  const last = recs[recs.length - 1]; if (last) await Store.putMany("kv", [["ancora", { seq: Number(last.seq), hash: last.hash, data: last.registrado_em }]]);
 }
-async function carregar() {
-  P.carregando = true; P.rejeitado = false; render();
+async function lancar(partials, novasPessoas) {
+  const antes = A.L.records.length; let recs;
+  try { recs = A.L.append(partials); } catch (e) { throw E(limpaMsg(e.message)); }
   try {
-    if (location.protocol === "file:") throw E("Esta página foi aberta como arquivo local, onde o navegador bloqueia a leitura do portal.json. Use o endereço publicado no GitHub Pages ou carregue o arquivo manualmente abaixo.");
-    const r = await fetch("portal.json?v=" + Date.now(), { cache: "no-store" });
-    if (!r.ok) throw E("O livro ainda não foi publicado (portal.json não encontrado, código " + r.status + ").");
-    await aplicar(await r.json(), "publicado");
-  } catch (e) { P.erro = limpaMsg(e.message || e); P.ok = false; }
-  P.carregando = false; render();
+    if (novasPessoas) { Object.assign(A.pessoas, novasPessoas); await Store.putMany("kv", [["pessoas", A.pessoas]]); }
+    await gravarRegistros(recs);
+  } catch (e) {
+    A.L.load(A.L.records.slice(0, antes)); if (novasPessoas) for (const k in novasPessoas) delete A.pessoas[k];
+    throw E("Não foi possível gravar no navegador (espaço insuficiente ou armazenamento bloqueado). Nada foi registrado. Faça um backup e libere espaço.");
+  }
+  return recs;
 }
-function carregarArquivo() {
-  const f = h("input", { type: "file", accept: ".json,application/json", style: { display: "none" } }); document.body.append(f);
-  f.addEventListener("change", () => { const file = f.files[0]; f.remove(); if (!file) return; const rd = new FileReader(); rd.onerror = () => toast("Não foi possível ler o arquivo.", "bad");
-    rd.onload = () => run(async () => { let o; try { o = JSON.parse(rd.result); } catch (_) { throw E("O arquivo não é um JSON válido."); } await aplicar(o, "arquivo local"); render(); }); rd.readAsText(file); });
-  f.click();
-}
+async function salvarPessoas() { await Store.putMany("kv", [["pessoas", A.pessoas]]); }
+async function run(fn) { try { return await fn(); } catch (e) { toast(limpaMsg(e.message || e), "bad"); return false; } }
 
 /* ---------- tema, casca e navegação ---------- */
-function setTema(t) { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("rifa_portal_theme", t); } catch (_) {} }
+function setTema(t) { document.documentElement.setAttribute("data-theme", t); try { localStorage.setItem("rifa_theme", t); } catch (_) {} }
 function renderShell() {
-  const cfg = P.ok ? st().cfg : null, hdr = $("hdr"); clear(hdr);
-  const dark = document.documentElement.getAttribute("data-theme") === "dark";
-  hdr.append(h("div", { class: "brand" }, h("div", { class: "brand-mark", "aria-hidden": "true" }, "R"), h("div", null, h("h1", null, cfg ? cfg.certame : "Rifa — Ação entre Amigos"), h("small", null, cfg ? "Beneficiário: " + (cfg.beneficiario || "—") : "Portal público de participação e transparência"))),
-    h("div", { class: "opbox" }, cfg ? chip(statusTxt[C.statusCertame(st())], C.statusCertame(st()) === "ABERTA" ? "ok" : "info") : null, P.ok ? chip("Livro verificado ✓", "ok") : null,
-      h("button", { class: "sm", type: "button", onclick: () => { setTema(dark ? "light" : "dark"); renderShell(); } }, dark ? "☀ Tema claro" : "☾ Tema escuro")));
-  const nav = $("nav"); clear(nav); if (P.ok) nav.append(tabs(VIEWS, P.view, (k) => { P.view = k; render(); window.scrollTo(0, 0); }));
+  const cfg = st().cfg, hdr = $("hdr"); clear(hdr);
+  hdr.append(h("div", { class: "brand" }, h("div", { class: "brand-mark", "aria-hidden": "true" }, "R"), h("div", null, h("h1", null, cfg ? cfg.certame : "Rifa — Ação entre Amigos"), h("small", null, cfg ? "Beneficiário: " + (cfg.beneficiario || "—") : "Livro-razão verificável · bilhetes gráficos"))),
+    h("div", { class: "opbox" }, cfg ? chip(statusTxt[C.statusCertame(st())], C.statusCertame(st()) === "ABERTA" ? "ok" : C.statusCertame(st()) === "SORTEADA" ? "info" : "warn") : null,
+      h("span", { class: "chip off", title: "Motor de cálculo do hash" }, "SHA-256 " + (C.engine === "wasm" ? "WebAssembly" : "JS")),
+      h("button", { class: "sm", type: "button", onclick: () => { setTema(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); renderShell(); } }, document.documentElement.getAttribute("data-theme") === "dark" ? "☀ Tema claro" : "☾ Tema escuro")));
+  const nav = $("nav"); clear(nav); nav.append(tabs(VIEWS, A.view, (k) => { A.view = k; render(); window.scrollTo(0, 0); }));
+  const ban = $("banner"); clear(ban);
+  if (A.avisoAncora) ban.append(h("div", { class: "alert bad", role: "alert" }, "⚠ ", A.avisoAncora));
 }
 function render() {
   renderShell(); const v = $("view"); clear(v);
-  if (P.carregando) return v.append(h("div", { class: "card" }, h("p", { class: "live" }, "Carregando e verificando o livro publicado…")));
-  if (!P.ok) return viewErro(v);
-  try { ({ participar: viewParticipar, resultados: viewResultados, regulamento: viewRegulamento, livro: viewLivro })[P.view](v); } catch (e) { v.append(h("div", { class: "alert bad" }, "Erro ao desenhar a tela: " + limpaMsg(e.message))); console.error(e); }
-}
-function viewErro(v) {
-  v.append(h("section", { class: "card" }, h("h2", null, P.rejeitado ? "Não foi possível confiar no livro publicado" : "Livro ainda indisponível"), h("div", { class: "alert " + (P.rejeitado ? "bad" : "warn"), role: "alert" }, P.erro || "Sem dados."),
-    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: carregar }, "Tentar de novo"), h("button", { type: "button", onclick: carregarArquivo }, "Carregar portal.json de um arquivo")),
-    h("p", { class: "hint" }, "Participantes: se esta mensagem persistir, fale com o organizador. Nenhum pedido pode ser feito sem um livro verificado.")));
+  if (A.erroCarga) return viewRecuperacao(v);
+  try { (VIEWFN[A.view] || VIEWFN.painel)(v); } catch (e) { v.append(h("div", { class: "alert bad" }, "Erro ao desenhar a tela: " + limpaMsg(e.message))); console.error(e); }
 }
 
-/* ---------- participar ---------- */
-function pixPayload(total, txid) {
-  const c = st().cfg; if (!c.pix_chave) return null;
-  try { return C.pixPayload({ chave: c.pix_chave, nome: c.pix_titular || c.certame, cidade: c.pix_cidade || "Brasil", valorCentavos: total > 0n ? String(total) : "", txid, descricao: c.certame }); } catch (_) { return null; }
+/* ---------- seletor de comprador ---------- */
+function buyerPicker(opts) {
+  opts = opts || {}; const lista = Object.keys(A.pessoas).filter((c) => !A.pessoas[c].unidoA || c === opts.valor).sort((a, b) => nomeP(a).localeCompare(nomeP(b), "pt-BR"));
+  const sel = h("select", { "aria-label": "Comprador" }, h("option", { value: "" }, "— escolha o comprador —"), lista.map((c) => h("option", { value: c, selected: c === opts.valor }, nomeP(c) + " (" + c + ")")), opts.travar ? null : h("option", { value: "__novo" }, "➕ Novo comprador…"));
+  if (opts.travar) { sel.disabled = true; }
+  const nome = input({ placeholder: "Nome completo", maxlength: 60, "aria-label": "Nome do novo comprador" }), fone = input({ placeholder: "(61) 9 0000-0000", inputmode: "tel", maxlength: 20, "aria-label": "Telefone do novo comprador" });
+  const novo = h("div", { class: "grid g2", style: { display: "none", marginTop: ".4rem" } }, field("Nome", nome), field("Telefone / WhatsApp", fone, "Fica só neste aparelho, fora do livro público."));
+  const upd = () => { novo.style.display = sel.value === "__novo" ? "" : "none"; };
+  sel.addEventListener("change", upd); if (!lista.length && !opts.travar) { sel.value = "__novo"; } upd();
+  const root = h("div", null, sel, novo);
+  return { el: root, /** devolve {codigo, novas} (novas = pessoas a gravar) */ get() {
+    if (sel.value === "__novo") { const n = nome.value.trim().replace(/\s+/g, " "); if (n.length < 2) throw E("Informe o nome do novo comprador (mín. 2 letras)."); const f = digitos(fone.value); if (f && (f.length < 10 || f.length > 13)) throw E("Telefone inválido: use DDD + número."); const c = proxCodigo(); return { codigo: c, novas: { [c]: { nome: n, fone: f, criado: new Date().toISOString() } } }; }
+    if (!sel.value) throw E("Escolha o comprador."); return { codigo: sel.value, novas: null }; } };
 }
-function pixBox(payload, titulo) {
-  if (!payload) return h("div", { class: "alert warn" }, "O organizador ainda não informou a chave PIX.");
+
+/* ---------- PIX ---------- */
+function pixPayloadPara(valorCentavos, txid, desc) {
+  const c = st().cfg; if (!c || !c.pix_chave) return null;
+  try { return C.pixPayload({ chave: c.pix_chave, nome: c.pix_titular || c.certame, cidade: c.pix_cidade || "Brasil", valorCentavos: valorCentavos > 0n ? String(valorCentavos) : "", txid, descricao: desc }); } catch (_) { return null; }
+}
+function pixBox(payload) {
+  if (!payload) return h("div", { class: "alert warn" }, "Chave PIX não configurada (Ajustes → Certame).");
   let qr = null; try { qr = C.QR.make(payload); } catch (_) {}
-  return h("div", { class: "pixbox" }, qr ? h("div", { class: "qrbox" }, C.QR.toSvg(qr, 190)) : null, h("div", { class: "grow" }, h("div", { class: "hint" }, titulo || "PIX copia e cola"), h("div", { class: "pre" }, payload), h("button", { class: "sm", type: "button", onclick: () => copyText(payload) }, "Copiar código PIX")));
+  return h("div", { class: "pixbox" }, qr ? h("div", { class: "qrbox" }, C.QR.toSvg(qr, 190)) : null, h("div", { class: "grow" }, h("div", { class: "hint" }, "PIX copia e cola"), h("div", { class: "pre" }, payload), h("button", { class: "sm", type: "button", onclick: () => copyText(payload) }, "Copiar código PIX")));
 }
-function viewParticipar(v) {
-  const s = st(), c = s.cfg, cnt = C.contagem(s), arr = C.arrecadacao(s), enc = !!s.vendasEnc;
-  const ger = P.obj.gerado_em ? C.fmtIso(P.obj.gerado_em) : "—";
-  v.append(h("div", { class: "alert info" }, "Situação publicada em ", h("strong", null, ger), " (registro #" + s.seq + "). Reservas feitas depois disso só aparecem quando o organizador publicar de novo; a confirmação final é sempre dele."));
-  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Sobre este certame"), h("div", { class: "row" }, chip(C.METODOS[c.metodo], "info"), chip("Sorteio: " + fmtDH(c.data_sorteio), "off"))),
-    h("div", { class: "grid g4" }, kpi("Livres", String(cnt.livres), "de " + cnt.total), kpi("Reservados", String(cnt.reservados), "aguardando pagamento"), kpi("Pagos", String(cnt.pagos), "concorrem ao sorteio"), kpi("Valor do bilhete", brl(c.valor_ponto_centavos), "por número"), kpi("Arrecadado", brl(arr), "confirmado")),
-    h("div", { class: "bar", role: "img", "aria-label": cnt.pagos + " de " + cnt.total + " bilhetes pagos" }, h("i", { style: { width: (cnt.total ? Math.round(cnt.pagos * 100 / cnt.total) : 0) + "%" } })),
-    h("h3", null, "Prêmios"), s.premios.length ? h("ol", { class: "premlist" }, s.premios.map((p) => h("li", null, C.descPremio(p, arr)))) : h("p", { class: "muted" }, "Prêmios a definir pelo organizador."),
-    h("p", { class: "hint" }, "Os prêmios podem mudar com motivo registrado; todas as versões ficam no Livro público.")));
-  if (enc) v.append(h("div", { class: "alert warn" }, "As vendas deste certame estão encerradas. Você pode acompanhar a apuração na aba Resultados."));
-  const info = h("span", { class: "muted", "aria-live": "polite" });
-  const filtro = input({ type: "search", placeholder: "Buscar nº…", "aria-label": "Buscar número", oninput: (e) => { P.filtro = e.target.value; P.pagina = 0; desenhaGrade(); } });
-  const fst = select([{ v: "", t: "Todos" }, { v: "livre", t: "Só livres" }, { v: "reservado", t: "Só reservados" }, { v: "pago", t: "Só pagos" }, { v: "premio", t: "Só premiados" }], P.fstat, { "aria-label": "Filtrar", onchange: (e) => { P.fstat = e.target.value; P.pagina = 0; desenhaGrade(); } });
-  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Escolha seus números"), info),
-    h("div", { class: "row", style: { margin: ".4rem 0" } }, h("div", { class: "grow" }, filtro), h("div", null, fst), h("button", { class: "sm", type: "button", onclick: () => { P.sel.clear(); desenhaGrade(); } }, "Desmarcar todos")),
-    h("div", { class: "legend", "aria-label": "Legenda" }, legenda("livre", "Livre (clique para escolher)"), legenda("reservado", "Reservado (R)"), legenda("pago", "Pago (✓)"), legenda("premio", "Premiado (★)")),
-    h("div", { id: "pgs" }), h("div", { class: "grade", id: "grade", role: "group", "aria-label": "Grade de bilhetes" })));
-  P.info = info;
-  const nome = input({ placeholder: "Seu nome completo ou apelido", maxlength: 60, "aria-label": "Seu nome" }), fone = input({ placeholder: "(61) 9 0000-0000", inputmode: "tel", maxlength: 20, "aria-label": "Seu WhatsApp" });
-  const resumo = h("div", { class: "cart", id: "cart", "aria-live": "polite" });
-  v.append(h("section", { class: "card" }, h("h2", null, "Pedido de reserva"), h("p", { class: "muted" }, "Escolha os números acima, informe seus dados e envie o pedido ao organizador pelo WhatsApp. Seu telefone não é publicado."),
-    h("div", { class: "grid g2" }, field("Seu nome", nome), field("Seu WhatsApp (DDD + número)", fone, "Opcional, mas ajuda o organizador a confirmar com você.")), resumo,
-    h("div", { class: "row" }, h("button", { class: "primary", type: "button", disabled: enc, onclick: () => run(() => enviarPedido(nome, fone)) }, "📲 Enviar pedido pelo WhatsApp"), h("button", { type: "button", disabled: enc, onclick: () => run(() => copiarPedido(nome, fone)) }, "Copiar pedido"), h("button", { type: "button", disabled: enc, onclick: () => run(() => baixarPedido(nome, fone)) }, "Baixar pedido (.txt)")),
-    h("div", { class: "alert warn" }, h("strong", null, "Como funciona: "), "o pedido é só uma solicitação. O organizador confere se os números continuam livres, reserva e confirma depois do seu pagamento por PIX. O bilhete só vale com o pagamento confirmado. Guarde o comprovante do PIX.")));
-  P.carrinho = resumo; desenhaGrade();
+
+/* ---------- painel ---------- */
+function selInfo() {
+  const s = st(), arr = [...A.sel].sort((a, b) => a - b), liv = [], res = [], pag = [], prem = [];
+  for (const n of arr) { const t = s.t[n]; if (!t) liv.push(n); else if (t.st === "RESERVADO") res.push(n); else { pag.push(n); if (t.premio != null) prem.push(n); } }
+  return { arr, liv, res, pag, prem };
 }
-function visivel(n) { const f = P.filtro.trim().toLowerCase(), cs = celulaStatus(n); if (P.fstat && cs !== P.fstat) return false; if (!f) return true; return fnum(n).includes(f) || String(n) === f; }
-function desenhaGrade() {
+const STAT_ICON = { livre: "", reservado: "R", pago: "✓", premio: "★" };
+function celulaStatus(n) { const t = st().t[n]; if (!t) return "livre"; if (t.premio != null) return "premio"; return t.st === "PAGO" ? "pago" : "reservado"; }
+const STAT_NOME = { livre: "livre", reservado: "reservado, aguardando pagamento", pago: "pago", premio: "premiado" };
+
+function viewPainel(v) {
+  const s = st();
+  if (!s.cfg) return viewCriarCertame(v);
+  const cnt = C.contagem(s), arr = C.arrecadacao(s), prev = C.previsto(s), stc = C.statusCertame(s);
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Situação do certame"), h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => abrirConfig(false) }, "✎ Editar certame"), h("button", { class: "sm", type: "button", onclick: () => novoCertame() }, "Novo certame…"), chip(C.METODOS[s.cfg.metodo], "info"), s.cfg.data_sorteio ? chip("Sorteio: " + fmtDH(s.cfg.data_sorteio), "off") : null)),
+    h("div", { class: "grid g4" }, kpi("Livres", String(cnt.livres), "de " + cnt.total), kpi("Reservados", String(cnt.reservados), "aguardando pagamento"), kpi("Pagos", String(cnt.pagos), "elegíveis ao sorteio"), kpi("Arrecadado", brl(arr), "previsto " + brl(prev)),
+      kpi("Valor do bilhete", brl(s.cfg.valor_ponto_centavos), "preço de tabela"), kpi("Prêmio 1", s.premios[0] ? C.descPremio(s.premios[0], arr) : "—", s.premios.length > 1 ? "+ " + (s.premios.length - 1) + " outro(s)" : "")),
+    h("div", { class: "bar", role: "img", "aria-label": cnt.pagos + " de " + cnt.total + " bilhetes pagos" }, h("i", { style: { width: (cnt.total ? Math.round(cnt.pagos * 100 / cnt.total) : 0) + "%" } }))));
+  const aviso = Number(s.cfg.reserva_aviso_dias || 0);
+  if (aviso > 0 && !s.vendasEnc) {
+    const velhas = Object.keys(s.t).filter((k) => s.t[k].st === "RESERVADO" && C.daysBetween(s.t[k].data, hoje()) >= aviso).map(Number).sort((a, b) => a - b);
+    if (velhas.length) v.append(h("div", { class: "alert warn" }, "⏳ " + velhas.length + " bilhete(s) reservado(s) há " + aviso + " dia(s) ou mais. Nada é liberado automaticamente: você decide. ", h("button", { class: "sm", type: "button", onclick: () => { A.sel = new Set(velhas); A.filtro = ""; A.fstat = "reservado"; render(); } }, "Selecionar essas reservas")));
+  }
+  if (s.vendasEnc) v.append(h("div", { class: "alert info" }, "As vendas estão encerradas (lista de elegíveis congelada). Para vender, reservar, liberar ou estornar, reabra as vendas na aba Sorteio."));
+  const tb = h("div", { class: "card" }), barra = h("div", { class: "row", id: "acoes" }), info = h("span", { class: "muted", id: "selinfo", "aria-live": "polite" });
+  const filtro = input({ type: "search", placeholder: "Buscar nº ou comprador…", value: A.filtro, "aria-label": "Buscar", oninput: (e) => { A.filtro = e.target.value; A.pagina = 0; desenharGrade(); } });
+  const fst = select([{ v: "", t: "Todos os status" }, { v: "livre", t: "Só livres" }, { v: "reservado", t: "Só reservados" }, { v: "pago", t: "Só pagos" }, { v: "premio", t: "Só premiados" }], A.fstat, { "aria-label": "Filtrar por status", onchange: (e) => { A.fstat = e.target.value; A.pagina = 0; desenharGrade(); } });
+  tb.append(h("div", { class: "row between" }, h("h2", null, "Bilhetes"), info), barra, h("div", { class: "row", style: { margin: ".6rem 0" } }, h("div", { class: "grow" }, filtro), h("div", null, fst), h("button", { class: "sm", type: "button", onclick: () => { for (let i = 0; i < Number(s.cfg.total); i++) if (celulaStatus(i) === "livre" && visivel(i)) A.sel.add(i); desenharGrade(); } }, "Marcar livres visíveis"), h("button", { class: "sm", type: "button", onclick: () => { A.sel.clear(); desenharGrade(); } }, "Limpar seleção")),
+    h("div", { class: "legend", "aria-label": "Legenda" }, legenda("livre", "Livre"), legenda("reservado", "Reservado (R)"), legenda("pago", "Pago (✓)"), legenda("premio", "Premiado (★)")), h("div", { id: "pgs" }), h("div", { class: "grade", id: "grade", role: "group", "aria-label": "Grade de bilhetes" }), h("p", { class: "hint" }, "Clique nos bilhetes para marcar vários de uma vez; use os botões acima para agir sobre a seleção. Com um único bilhete pago/reservado marcado, use “Ver bilhete”."));
+  v.append(tb); desenharGrade();
+}
+const kpi = (l, val, s) => h("div", { class: "kpi" }, h("div", { class: "l" }, l), h("div", { class: "v" }, val), h("div", { class: "s" }, s || " "));
+const legenda = (k, t) => h("span", { class: "lg" }, h("i", { class: "tk mini " + k }, STAT_ICON[k]), t);
+function visivel(n) {
+  const s = st(), f = A.filtro.trim().toLowerCase(), cs = celulaStatus(n);
+  if (A.fstat && cs !== A.fstat) return false; if (!f) return true;
+  const t = s.t[n]; return fnum(n).includes(f) || String(n) === f || (t && nomeP(t.comp).toLowerCase().includes(f));
+}
+function desenharGrade() {
   const g = $("grade"); if (!g) return; const s = st(), total = Number(s.cfg.total), PG = 500; clear(g);
   const vis = []; for (let i = 0; i < total; i++) if (visivel(i)) vis.push(i);
-  const pages = Math.max(1, Math.ceil(vis.length / PG)); if (P.pagina >= pages) P.pagina = pages - 1;
-  const pg = $("pgs"); clear(pg); if (pages > 1) pg.append(h("div", { class: "pager" }, h("span", null, "Página " + (P.pagina + 1) + " de " + pages), h("button", { class: "sm", type: "button", disabled: P.pagina === 0, onclick: () => { P.pagina--; desenhaGrade(); } }, "‹ Anterior"), h("button", { class: "sm", type: "button", disabled: P.pagina >= pages - 1, onclick: () => { P.pagina++; desenhaGrade(); } }, "Próxima ›")));
-  const frag = document.createDocumentFragment(), enc = !!s.vendasEnc;
-  for (const n of vis.slice(P.pagina * PG, P.pagina * PG + PG)) {
-    const cs = celulaStatus(n), t = s.t[n], livre = cs === "livre" && !enc, on = P.sel.has(n);
-    const b = h("button", { type: "button", class: "tk " + cs + (on ? " sel" : ""), "data-n": n, "aria-pressed": livre ? (on ? "true" : "false") : null, disabled: !livre, "aria-label": "Número " + fnum(n) + ", " + STAT_NOME[cs] + (t ? ", comprador " + nomePub(t.comp) : ""), title: t ? nomePub(t.comp) : (enc ? "Vendas encerradas" : "Livre") }, h("span", { class: "n" }, fnum(n)), h("span", { class: "ic", "aria-hidden": "true" }, STAT_ICON[cs]));
-    if (livre) b.addEventListener("click", () => { if (P.sel.has(n)) P.sel.delete(n); else P.sel.add(n); b.classList.toggle("sel"); b.setAttribute("aria-pressed", P.sel.has(n) ? "true" : "false"); atualizaCarrinho(); });
+  const pages = Math.max(1, Math.ceil(vis.length / PG)); if (A.pagina >= pages) A.pagina = pages - 1;
+  const pg = $("pgs"); clear(pg); if (pages > 1) pg.append(h("div", { class: "pager" }, h("span", null, "Página " + (A.pagina + 1) + " de " + pages + " (" + vis.length + " bilhetes)"), h("button", { class: "sm", type: "button", disabled: A.pagina === 0, onclick: () => { A.pagina--; desenharGrade(); } }, "‹ Anterior"), h("button", { class: "sm", type: "button", disabled: A.pagina >= pages - 1, onclick: () => { A.pagina++; desenharGrade(); } }, "Próxima ›")));
+  const frag = document.createDocumentFragment();
+  for (const n of vis.slice(A.pagina * PG, A.pagina * PG + PG)) {
+    const cs = celulaStatus(n), t = s.t[n], on = A.sel.has(n);
+    const b = h("button", { type: "button", class: "tk " + cs + (on ? " sel" : ""), "data-n": n, "aria-pressed": on ? "true" : "false", "aria-label": "Bilhete " + fnum(n) + ", " + STAT_NOME[cs] + (t ? ", comprador " + nomeP(t.comp) : ""), title: t ? nomeP(t.comp) : "Livre" }, h("span", { class: "n" }, fnum(n)), h("span", { class: "ic", "aria-hidden": "true" }, STAT_ICON[cs]));
+    b.addEventListener("click", () => { if (A.sel.has(n)) A.sel.delete(n); else A.sel.add(n); b.classList.toggle("sel"); b.setAttribute("aria-pressed", A.sel.has(n) ? "true" : "false"); atualizarAcoes(); });
     frag.append(b);
   }
-  g.append(frag); if (!vis.length) g.append(h("p", { class: "muted" }, "Nenhum número com esse filtro.")); atualizaCarrinho();
+  g.append(frag); if (!vis.length) g.append(h("p", { class: "muted" }, "Nenhum bilhete com esse filtro.")); atualizarAcoes();
 }
-const selArr = () => [...P.sel].sort((a, b) => a - b);
-function atualizaCarrinho() {
-  const s = st(), arr = selArr(), box = P.carrinho, total = BigInt(s.cfg.valor_ponto_centavos) * BigInt(arr.length);
-  if (P.info) P.info.textContent = arr.length ? arr.length + " número(s) escolhido(s)" : "Nenhum número escolhido";
-  if (!box) return; clear(box);
-  box.append(kv([["Números escolhidos", arr.length ? arr.map(fnum).join(", ") : "Nenhum"], ["Quantidade", String(arr.length)], ["Total a pagar", brl(total)]]));
-  if (arr.length) box.append(pixBox(pixPayload(total, "RIFA" + arr.length + "N"), "Pague o total por PIX (copia e cola ou QR) e guarde o comprovante"));
+function atualizarAcoes() {
+  const barra = $("acoes"), info = $("selinfo"); if (!barra) return; clear(barra); const s = st(), si = selInfo(), enc = s.vendasEnc;
+  info.textContent = si.arr.length ? si.arr.length + " selecionado(s): " + si.arr.slice(0, 12).map(fnum).join(", ") + (si.arr.length > 12 ? "…" : "") : "Nenhum bilhete selecionado";
+  const so = (c) => si.arr.length > 0 && c;
+  const btn = (txt, kind, ok, fn, dica) => h("button", { class: kind, type: "button", disabled: !ok, title: ok ? "" : dica, onclick: () => run(fn) }, txt);
+  barra.append(
+    btn("Reservar", "", !enc && so(si.liv.length === si.arr.length), () => acaoReservar(si.liv), "Selecione apenas bilhetes livres (vendas abertas)"),
+    btn("Registrar pagamento", "primary", !enc && so(si.pag.length === 0), () => acaoPagar(si.liv, si.res), "Selecione bilhetes livres ou reservados (vendas abertas)"),
+    btn("Liberar reserva", "", !enc && so(si.res.length === si.arr.length), () => acaoLiberar(si.res), "Selecione apenas bilhetes reservados"),
+    btn("Transferir", "", so(si.liv.length === 0 && si.prem.length === 0), () => acaoTransferir(si.arr.filter((n) => !!s.t[n])), "Selecione bilhetes reservados ou pagos (não premiados)"),
+    btn("Ver bilhete", "", si.arr.length > 0 && si.liv.length === 0, () => mostrarBilhetes(si.arr, null), "Selecione bilhetes reservados ou pagos"));
 }
-function dadosPedido(nome, fone) {
-  const arr = selArr(); if (!arr.length) throw E("Clique em pelo menos um número livre na grade.");
-  const o = { id: P.obj.certame_id, bilhetes: arr, nome: nome.value, fone: fone.value };
-  const codigo = C.pedidoCodificar(o), d = C.pedidoDecodificar(codigo); return { codigo, texto: C.pedidoMensagem(st(), d, codigo) };
-}
-async function enviarPedido(nome, fone) {
-  const { texto } = dadosPedido(nome, fone), url = "https://wa.me/" + waNumero() + "?text=" + encodeURIComponent(texto);
-  const a = h("a", { href: url, target: "_blank", rel: "noopener noreferrer" }); document.body.append(a); a.click(); a.remove();
-  toast("Abrindo o WhatsApp do organizador. Envie a mensagem sem alterar o código do pedido.", "ok", 9000);
-}
-async function copiarPedido(nome, fone) { const { texto } = dadosPedido(nome, fone); await copyText(texto); }
-async function baixarPedido(nome, fone) { const { texto, codigo } = dadosPedido(nome, fone); downloadBlob("pedido-reserva-" + codigo.slice(5, 11) + ".txt", new Blob([texto], { type: "text/plain;charset=utf-8" })); toast("Pedido baixado. Envie o arquivo ao organizador.", "ok"); }
 
-/* ---------- resultados ---------- */
-function viewResultados(v) {
-  const s = st(), c = s.cfg, arr = C.arrecadacao(s);
-  v.append(h("section", { class: "card" }, h("h2", null, "Como a apuração é feita"), h("p", null, c.metodo === "FEDERAL" ? "Pelo resultado oficial da Loteria Federal (" + (c.concurso || "concurso a informar") + "): os últimos " + C.padW(Number(c.total)) + " dígitos do número oficial, divididos pelo total de bilhetes (" + c.total + "), indicam o bilhete. " + (c.regra_vazio === "PROXIMO" ? "Se esse bilhete não estiver pago, vale o próximo bilhete pago." : "Se esse bilhete não estiver pago, aguarda-se um novo concurso.") : "Sorteio digital com compromisso: o organizador registrou antes o hash (impressão digital) de uma semente secreta e a revela no sorteio. Qualquer pessoa confere que a semente gera o hash registrado."),
-    s.compromisso ? kv([["Hash da semente (compromisso)", h("span", { class: "mono brk" }, s.compromisso.hash)], ["Registrado em", C.fmtDate(s.compromisso.data) + " · registro #" + s.compromisso.seq]]) : null,
-    h("p", { class: "hint" }, "Seu navegador reaplicou todo o livro, inclusive a conferência de cada apuração. Se alguma estivesse errada, esta página recusaria o livro.")));
-  const box = h("section", { class: "card" }, h("h2", null, "Resultados registrados"));
-  if (!s.sorteios.length && !s.tentativas.length) box.append(h("p", { class: "muted" }, "Nenhuma apuração registrada ainda. Data prevista: " + fmtDH(c.data_sorteio) + "."));
-  else {
-    box.append(dataTable({ rows: s.sorteios, sort: -1, empty: "—", cols: [{ h: "Prêmio", r: (x) => x.ordem + "º" }, { h: "Descrição", r: (x) => C.descPremio(s.premios[x.ordem - 1] || { tipo: "OBJETO", descricao: "(removido)" }, BigInt(x.arrecadacao)) }, { h: "Bilhete", r: (x) => h("strong", null, fnum(x.bilhete)) }, { h: "Ganhador", r: (x) => nomePub(s.t[x.bilhete] && s.t[x.bilhete].comp) }, { h: "Valor", cls: "num", r: (x) => brl(x.premio_valor) }, { h: "Origem", r: (x) => x.metodo === "FEDERAL" ? "Federal " + x.premio_federal + (x.concurso ? " (" + x.concurso + ")" : "") + " → base " + x.numero_base : "Digital · semente revelada" }, { h: "Data", r: (x) => C.fmtDate(x.data) }] }).el);
-    if (s.tentativas.length) box.append(h("h3", null, "Apurações sem ganhador"), h("ul", null, s.tentativas.map((t) => h("li", null, "Registro #" + t.seq + ": " + t.ordem + "º prêmio, número " + t.premio_federal + " — bilhete-base não pago (aguardando novo concurso)."))));
+/* ---------- ações ---------- */
+async function acaoReservar(nums) {
+  const bp = buyerPicker(), obsNota = h("p", { class: "hint" }, "Reserva não vence sozinha: só você decide liberar. " + (Number(st().cfg.reserva_aviso_dias) > 0 ? "Aviso visual após " + st().cfg.reserva_aviso_dias + " dia(s)." : ""));
+  modal("Reservar " + nums.length + " bilhete(s)", h("div", null, h("p", null, "Bilhetes: ", h("strong", null, nums.map(fnum).join(", "))), field("Comprador", bp.el), obsNota), [{ label: "Cancelar" }, { label: "Reservar", kind: "primary", onClick: () => run(async () => {
+    const b = bp.get(); await lancar([{ tipo: "RESERVA", doc_seq: A.L.nextDoc("RESERVA"), data: hoje(), bilhetes: C.joinTickets(nums), comprador: b.codigo }], b.novas);
+    A.sel.clear(); toast("Reserva registrada para " + nomeP(b.codigo) + ".", "ok"); render(); return true; }).then((r) => r === true ? undefined : false) }]);
+}
+async function acaoPagar(liv, res) {
+  const donos = [...new Set(res.map((n) => st().t[n].comp))]; if (donos.length > 1) throw E("Os bilhetes reservados pertencem a compradores diferentes (" + donos.map(nomeP).join(", ") + "). Registre o pagamento de um comprador por vez.");
+  const all = liv.concat(res).sort((a, b) => a - b), cfg = st().cfg, bp = buyerPicker({ valor: donos[0], travar: !!donos[0] });
+  const unit = decInput({ value: C.fmtDec(BigInt(cfg.valor_ponto_centavos), 2, 2), "aria-label": "Valor por bilhete" }), forma = select(["PIX", "Dinheiro", "Transferência", "Cartão", "Cortesia", "Outro"], "PIX"), obs = input({ maxlength: 120, placeholder: "Opcional (obrigatória em cortesia)" });
+  const total = h("strong"), pixSlot = h("div");
+  const calc = () => { try { const u = C.parseDec(unit.value, 2), t = u * BigInt(all.length); total.textContent = brl(t) + "  (" + all.length + " × " + brl(u) + ")"; clear(pixSlot); if (forma.value === "PIX" && u > 0n) pixSlot.append(pixBox(pixPayloadPara(t, "RIFA" + digitos(donos[0] || "") + all.length, cfg.certame))); } catch (e) { total.textContent = "valor inválido"; clear(pixSlot); } };
+  unit.addEventListener("input", calc); forma.addEventListener("change", calc); calc();
+  modal("Registrar pagamento", h("div", null, h("p", null, "Bilhetes: ", h("strong", null, all.map(fnum).join(", ")), liv.length && res.length ? " (" + liv.length + " livre(s) vendido(s) direto + " + res.length + " reservado(s))" : ""),
+    field("Comprador", bp.el, donos[0] ? "Comprador da reserva." : ""), h("div", { class: "grid g2" }, field("Valor por bilhete (R$)", unit, "Pode diferir do preço de tabela (desconto). Fica gravado em cada bilhete."), field("Forma de pagamento", forma)), field("Observação", obs), h("p", null, "Total a receber: ", total), pixSlot,
+    h("p", { class: "hint" }, "Confirme só depois de o dinheiro entrar. O recibo e o bilhete saem logo em seguida.")),
+  [{ label: "Cancelar" }, { label: "Confirmo o recebimento", kind: "primary", onClick: async () => { const r = await run(async () => {
+    const b = bp.get(), u = C.parseDec(unit.value, 2); const p = { tipo: "PAGAMENTO", doc_seq: A.L.nextDoc("PAGAMENTO"), data: hoje(), bilhetes: C.joinTickets(all), comprador: b.codigo, valor_unit_centavos: String(u), forma: forma.value };
+    if (obs.value.trim()) p.obs = obs.value.trim(); const recs = await lancar([p], b.novas); A.sel.clear(); render(); toast("Pagamento registrado: " + all.length + " bilhete(s) de " + nomeP(b.codigo) + ".", "ok"); setTimeout(() => mostrarBilhetes(all, recs[0]), 50); return true; }); return r === true ? undefined : false; } }], { wide: true });
+}
+async function acaoLiberar(nums) {
+  const mot = input({ maxlength: 160, value: "Desistência do comprador", "aria-label": "Motivo" });
+  modal("Liberar reserva", h("div", null, h("p", null, "Os bilhetes ", h("strong", null, nums.map(fnum).join(", ")), " voltam a ficar livres."), field("Motivo (fica no livro)", mot)), [{ label: "Cancelar" }, { label: "Liberar", kind: "primary", onClick: async () => { const r = await run(async () => { await lancar([{ tipo: "LIBERACAO", doc_seq: A.L.nextDoc("LIBERACAO"), data: hoje(), bilhetes: C.joinTickets(nums), motivo: mot.value.trim() }]); A.sel.clear(); render(); toast("Reserva liberada.", "ok"); return true; }); return r === true ? undefined : false; } }]);
+}
+async function acaoTransferir(nums) {
+  const bp = buyerPicker(), mot = input({ maxlength: 160, placeholder: "Ex.: presente, erro de cadastro…", "aria-label": "Motivo" });
+  modal("Transferir bilhetes", h("div", null, h("p", null, "Bilhetes: ", h("strong", null, nums.map(fnum).join(", ")), " (pagamentos já feitos continuam valendo)."), field("Novo comprador", bp.el), field("Motivo (fica no livro)", mot)), [{ label: "Cancelar" }, { label: "Transferir", kind: "primary", onClick: async () => { const r = await run(async () => { const b = bp.get(); await lancar([{ tipo: "TRANSFERENCIA", doc_seq: A.L.nextDoc("TRANSFERENCIA"), data: hoje(), bilhetes: C.joinTickets(nums), para: b.codigo, motivo: mot.value.trim() }], b.novas); A.sel.clear(); render(); toast("Transferência registrada.", "ok"); return true; }); return r === true ? undefined : false; } }]);
+}
+
+/* ---------- criação/edição do certame ---------- */
+function viewCriarCertame(v) {
+  v.append(h("section", { class: "card" }, h("h2", null, "Bem-vindo! Vamos criar o certame"), h("p", null, "Preencha os dados da rifa. Tudo pode ser ajustado depois (com motivo registrado e público no histórico), exceto o método, a quantidade e o preço depois que a apuração começar."),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: () => abrirConfig(true) }, "Criar certame"), h("button", { type: "button", onclick: () => importarArquivo() }, "Restaurar backup / importar rifa antiga"))));
+}
+function abrirConfig(novo) {
+  const s = st(), c = s.cfg || { certame: "", beneficiario: "", valor_ponto_centavos: "1000", total: "100", metodo: "FEDERAL", regra_vazio: "PROXIMO", data_sorteio: "", concurso: "", pix_chave: "61999487649", pix_titular: "", pix_cidade: "Brasilia", regulamento_extra: "", reserva_aviso_dias: "0" };
+  const trav = !novo && (s.sorteios.length > 0 || s.tentativas.length > 0), F = {};
+  F.certame = input({ value: c.certame, maxlength: 80 }); F.beneficiario = input({ value: c.beneficiario, maxlength: 120 }); F.valor = decInput({ value: C.fmtDec(BigInt(c.valor_ponto_centavos), 2, 2), disabled: trav }); F.total = input({ type: "number", min: 2, max: 10000, value: c.total, disabled: trav });
+  F.metodo = select([{ v: "FEDERAL", t: "Loteria Federal (resultado oficial, digitado por você)" }, { v: "DIGITAL", t: "Sorteio digital verificável (compromisso + semente)" }], c.metodo, { disabled: trav }); F.regra = select([{ v: "PROXIMO", t: "Usar o próximo bilhete pago (ciclicamente)" }, { v: "NOVO", t: "Não há ganhador: aguardar novo concurso" }], c.regra_vazio, { disabled: trav });
+  F.data = input({ type: "datetime-local", value: c.data_sorteio }); F.concurso = input({ value: c.concurso, maxlength: 60, placeholder: "Ex.: Loteria Federal, concurso 6010" }); F.pix = input({ value: c.pix_chave, maxlength: 80 }); F.tit = input({ value: c.pix_titular, maxlength: 60 }); F.cid = input({ value: c.pix_cidade, maxlength: 30 });
+  F.reg = h("textarea", { maxlength: 2000, "aria-label": "Regulamento adicional" }, c.regulamento_extra); F.aviso = input({ type: "number", min: 0, max: 999, value: c.reserva_aviso_dias || "0" }); F.mot = input({ maxlength: 160, placeholder: "Obrigatório ao alterar: fica público no histórico" });
+  const corpo = h("div", null, trav ? h("div", { class: "alert warn" }, "A apuração já começou: método, quantidade, preço e regra do bilhete não elegível estão travados para proteger a lisura.") : null,
+    h("div", { class: "grid g2" }, field("Nome do certame", F.certame), field("Beneficiário / finalidade", F.beneficiario), field("Valor do bilhete (R$)", F.valor), field("Quantidade de bilhetes (2 a 10000)", F.total, "Numerados de 0 até quantidade−1. Ampliar a série nunca apaga vendas."),
+      field("Método de apuração", F.metodo, "Federal: o bilhete ganhador deriva do número oficial. Digital: sorteio com compromisso (hash) publicado antes do encerramento."), field("Se o bilhete apurado não estiver pago", F.regra), field("Data e hora do sorteio", F.data), field("Concurso / fonte do resultado", F.concurso),
+      field("Chave PIX", F.pix, "CPF, e-mail, telefone (+55…) ou chave aleatória."), field("Titular da chave", F.tit), field("Cidade (PIX)", F.cid), field("Aviso de reserva antiga (dias)", F.aviso, "0 = sem aviso. A reserva nunca expira sozinha.")),
+    field("Regulamento adicional (opcional)", F.reg), novo ? null : field("Motivo da alteração", F.mot));
+  modal(novo ? "Criar certame" : "Alterar configuração", corpo, [{ label: "Cancelar" }, { label: novo ? "Criar" : "Salvar alteração", kind: "primary", onClick: async () => { const r = await run(async () => {
+    const dados = { certame: F.certame.value.trim(), beneficiario: F.beneficiario.value.trim(), valor_ponto_centavos: String(C.parseDec(F.valor.value, 2)), total: String(parseInt(F.total.value, 10) || ""), metodo: F.metodo.value, regra_vazio: F.regra.value, data_sorteio: F.data.value, concurso: F.concurso.value.trim(), pix_chave: F.pix.value.trim(), pix_titular: F.tit.value.trim(), pix_cidade: F.cid.value.trim(), regulamento_extra: F.reg.value.trim(), reserva_aviso_dias: String(parseInt(F.aviso.value, 10) || 0) };
+    const p = { tipo: "CONFIG", doc_seq: A.L.nextDoc("CONFIG"), data: hoje(), dados }; if (!novo) p.motivo = F.mot.value.trim(); await lancar([p]); A.sel.clear(); render(); toast(novo ? "Certame criado. Agora defina os prêmios." : "Configuração atualizada (motivo registrado).", "ok"); if (novo) { A.view = "premios"; render(); } return true; }); return r === true ? undefined : false; } }], { wide: true });
+}
+
+/* Rifa — interface 2: compradores, prêmios e regulamento, sorteio */
+const docCodigo = (r) => C.docCode([r.hash]);
+const nomeBilhetes = (arr) => arr.map(fnum).join(", ");
+
+/* ---------- compradores ---------- */
+function resumoCompradores() {
+  const s = st(), m = {}; for (const c in A.pessoas) m[c] = { codigo: c, res: [], pag: [], total: 0n };
+  for (const k in s.t) { const t = s.t[k], c = t.comp; if (!m[c]) m[c] = { codigo: c, res: [], pag: [], total: 0n }; if (t.st === "PAGO") { m[c].pag.push(Number(k)); m[c].total += t.unit; } else m[c].res.push(Number(k)); }
+  return Object.values(m);
+}
+function viewCompradores(v) {
+  if (!st().cfg) return v.append(h("div", { class: "alert info" }, "Crie o certame no Painel primeiro."));
+  const rows = resumoCompradores();
+  const dt = dataTable({ rows, sort: 1, asc: true, empty: "Nenhum comprador ainda.", onRow: (r) => detalheComprador(r.codigo), pageSize: 50, cols: [
+    { h: "Código", v: (r) => r.codigo, r: (r) => h("span", { class: "mono" }, r.codigo) }, { h: "Nome", v: (r) => nomeP(r.codigo), r: (r) => h("span", null, nomeP(r.codigo), (A.pessoas[r.codigo] || {}).unidoA ? [" ", chip("unido a " + (A.pessoas[r.codigo].unidoA), "off")] : null) }, { h: "Telefone", r: (r) => maskFone((A.pessoas[r.codigo] || {}).fone) },
+    { h: "Reservados", cls: "num", v: (r) => r.res.length, r: (r) => String(r.res.length) }, { h: "Pagos", cls: "num", v: (r) => r.pag.length, r: (r) => String(r.pag.length) }, { h: "Total pago", cls: "num", v: (r) => Number(r.total), r: (r) => brl(r.total) }, { h: "Ações", r: (r) => h("button", { class: "sm", type: "button", onclick: (e) => { e.stopPropagation(); detalheComprador(r.codigo); } }, "Editar") }] });
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Compradores (" + rows.length + ")"), h("div", { class: "row" }, h("button", { type: "button", onclick: () => novoCompradorAvulso() }, "➕ Novo comprador"), h("button", { type: "button", onclick: () => importarPedido() }, "📥 Importar pedido"), h("button", { type: "button", onclick: () => { A.showFone = !A.showFone; render(); } }, A.showFone ? "Ocultar telefones" : "Mostrar telefones"))),
+    h("p", { class: "hint" }, "Nomes e telefones ficam só neste aparelho (fora do livro público, que guarda apenas códigos CMP-0000). Clique numa linha para abrir."), dt.el));
+}
+function novoCompradorAvulso() {
+  const bp = buyerPicker(); modal("Novo comprador", h("div", null, field("Cadastro", bp.el)), [{ label: "Cancelar" }, { label: "Salvar", kind: "primary", onClick: async () => { const r = await run(async () => { const b = bp.get(); if (!b.novas) throw E("Escolha “Novo comprador” e preencha os dados."); Object.assign(A.pessoas, b.novas); await salvarPessoas(); render(); toast("Comprador cadastrado.", "ok"); return true; }); return r === true ? undefined : false; } }]);
+  setTimeout(() => { const sel = document.querySelector("dialog select"); if (sel) { sel.value = "__novo"; sel.dispatchEvent(new Event("change")); } }, 0);
+}
+function mensagemCobranca(r) {
+  const cfg = st().cfg, n = r.res.length, total = BigInt(cfg.valor_ponto_centavos) * BigInt(n), p = A.pessoas[r.codigo] || {};
+  const pix = pixPayloadPara(total, "RIFA" + digitos(r.codigo), cfg.certame);
+  return "Olá, " + (p.nome || "") + "! Seus bilhetes (" + nomeBilhetes(r.res) + ") do certame “" + cfg.certame + "” estão reservados. Valor: " + brl(total) + ". Chave PIX: " + cfg.pix_chave + (cfg.pix_titular ? " (" + cfg.pix_titular + ")" : "") + (pix ? "\nPIX copia e cola:\n" + pix : "") + "\nSorteio: " + fmtDH(cfg.data_sorteio) + " — " + C.METODOS[cfg.metodo] + ". Obrigado!";
+}
+function detalheComprador(codigo) {
+  const r = resumoCompradores().find((x) => x.codigo === codigo) || { codigo, res: [], pag: [], total: 0n }, p = A.pessoas[codigo] || { nome: codigo, fone: "" };
+  const nome = input({ value: p.nome, maxlength: 60 }), fone = input({ value: p.fone || "", inputmode: "tel", maxlength: 20 }), apel = input({ value: p.apelido || "", maxlength: 30, "aria-label": "Apelido público" });
+  const fd = digitos(p.fone), wa = fd.length >= 10 ? "https://wa.me/" + (fd.length <= 11 ? "55" + fd : fd) + "?text=" + encodeURIComponent(r.res.length ? mensagemCobranca(r) : "Olá, " + p.nome + "!") : null;
+  const body = h("div", null, kv([["Código", codigo], ["Bilhetes reservados", r.res.length ? nomeBilhetes(r.res) : "—"], ["Bilhetes pagos", r.pag.length ? nomeBilhetes(r.pag) : "—"], ["Total pago", brl(r.total)]]),
+    h("div", { class: "grid g2" }, field("Nome", nome), field("Telefone / WhatsApp", fone)), field("Apelido público (opcional)", apel, "Só preencha se o participante autorizou aparecer no portal com este apelido. Sem apelido, aparece só o código " + codigo + "."),
+    r.res.length ? h("div", { class: "row" }, h("button", { type: "button", class: "sm", onclick: () => copyText(mensagemCobranca(r)) }, "Copiar mensagem de cobrança (com PIX)"), wa ? h("a", { class: "btnlink", href: wa, target: "_blank", rel: "noopener noreferrer" }, "Lembrete de reserva no WhatsApp (texto)") : null) : (wa ? h("a", { class: "btnlink", href: wa, target: "_blank", rel: "noopener noreferrer" }, "Abrir conversa no WhatsApp") : null));
+  const acts = [{ label: "Fechar" }];
+  if (r.pag.length || r.res.length) acts.push({ label: "Ver bilhetes", onClick: () => { setTimeout(() => mostrarBilhetes(r.pag.concat(r.res).sort((a, b) => a - b), null), 30); } });
+  if (r.res.length && !st().vendasEnc) acts.push({ label: "Registrar pagamento das reservas", onClick: () => { setTimeout(() => run(() => acaoPagar([], r.res)), 30); } });
+  if (r.pag.length || r.res.length) acts.push({ label: "Enviar bilhetes (arquivos)…", onClick: () => { setTimeout(() => run(() => enviarParticipante(r.pag.concat(r.res), null)), 30); } });
+  acts.push({ label: "Unir a outro cadastro…", onClick: () => { setTimeout(() => run(async () => unirComprador(codigo)), 30); } });
+  if (!r.pag.length && !r.res.length) acts.push({ label: "Excluir cadastro", kind: "danger", onClick: () => { setTimeout(() => run(() => excluirComprador(codigo)), 30); } });
+  acts.push({ label: "Salvar dados", kind: "primary", onClick: async () => { const x = await run(async () => { const n = nome.value.trim().replace(/\s+/g, " "); if (n.length < 2) throw E("Informe o nome (mín. 2 letras)."); const f = digitos(fone.value); if (f && (f.length < 10 || f.length > 13)) throw E("Telefone inválido: use DDD + número."); A.pessoas[codigo] = Object.assign({}, A.pessoas[codigo], { nome: n, fone: f, apelido: apel.value.trim().replace(/\s+/g, " ").slice(0, 30) }); await salvarPessoas(); render(); toast("Dados salvos.", "ok"); return true; }); return x === true ? undefined : false; } });
+  modal(p.nome + " — " + codigo, body, acts);
+}
+
+/* ---------- prêmios e regulamento ---------- */
+const regulamentoTexto = () => C.regulamentoTexto(st());
+function viewPremios(v) {
+  const s = st(); if (!s.cfg) return v.append(h("div", { class: "alert info" }, "Crie o certame no Painel primeiro."));
+  const arr = C.arrecadacao(s); let lista = s.premios.map((p) => Object.assign({}, p));
+  const box = h("div"); const mot = input({ maxlength: 160, placeholder: s.premios.length ? "Motivo da alteração (obrigatório, fica público)" : "Motivo (opcional na 1ª definição)", "aria-label": "Motivo" });
+  function linhas() {
+    clear(box);
+    lista.forEach((p, i) => {
+      const tipo = select(Object.keys(C.TIPOS_PREMIO).map((k) => ({ v: k, t: C.TIPOS_PREMIO[k] })), p.tipo, { "aria-label": "Tipo do prêmio " + (i + 1), onchange: (e) => { p.tipo = e.target.value; linhas(); } });
+      const desc = input({ value: p.descricao || "", maxlength: 120, placeholder: p.tipo === "OBJETO" || p.tipo === "MISTO" ? "Descreva o objeto" : "Descrição (opcional)", "aria-label": "Descrição do prêmio " + (i + 1), oninput: (e) => { p.descricao = e.target.value; } });
+      const val = decInput({ value: p.valor_centavos ? C.fmtDec(BigInt(p.valor_centavos), 2, 2) : "", placeholder: p.tipo === "OBJETO" ? "Valor estimado (opcional)" : "R$ 0,00", "aria-label": "Valor do prêmio " + (i + 1), oninput: (e) => { const t = e.target.value.trim(); try { p.valor_centavos = t ? String(C.parseDec(t, 2)) : ""; e.target.classList.remove("bad"); } catch (_) { e.target.classList.add("bad"); } } });
+      const pc = decInput({ value: p.percentual_bp ? C.fmtDec(BigInt(p.percentual_bp), 2, 0) : "", placeholder: "% da arrecadação", "aria-label": "Percentual do prêmio " + (i + 1), oninput: (e) => { const t = e.target.value.trim(); try { p.percentual_bp = t ? String(C.parseDec(t, 2)) : ""; e.target.classList.remove("bad"); } catch (_) { e.target.classList.add("bad"); } } });
+      const jaSort = i < s.sorteios.length;
+      box.append(h("div", { class: "prem" }, h("div", { class: "prem-n" }, (i + 1) + "º"), h("div", { class: "grid g4 grow" }, field("Tipo", tipo), field("Descrição", desc), p.tipo === "PERCENTUAL" ? null : field(p.tipo === "OBJETO" ? "Valor estimado" : "Valor (R$)", val), p.tipo === "PERCENTUAL" || p.tipo === "MISTO" ? field("Percentual (%)", pc) : null),
+        h("div", { class: "row" }, jaSort ? chip("já apurado", "info") : null, h("button", { class: "sm", type: "button", disabled: i === 0 || jaSort || i - 1 < s.sorteios.length, onclick: () => { lista.splice(i - 1, 0, lista.splice(i, 1)[0]); linhas(); }, "aria-label": "Subir prêmio " + (i + 1) }, "↑"), h("button", { class: "sm", type: "button", disabled: i === lista.length - 1 || jaSort, onclick: () => { lista.splice(i + 1, 0, lista.splice(i, 1)[0]); linhas(); }, "aria-label": "Descer prêmio " + (i + 1) }, "↓"), h("button", { class: "sm danger", type: "button", disabled: jaSort, onclick: () => { lista.splice(i, 1); linhas(); }, "aria-label": "Remover prêmio " + (i + 1) }, "Remover"))));
+    });
+    if (!lista.length) box.append(h("p", { class: "muted" }, "Nenhum prêmio cadastrado."));
   }
-  v.append(box);
-}
-
-/* ---------- regulamento ---------- */
-function viewRegulamento(v) {
-  const reg = C.regulamentoTexto(st()), rbox = h("div", { class: "regul" });
-  for (const [t, ps] of reg) { rbox.append(h("h3", null, t)); for (const x of ps) rbox.append(h("p", null, x)); }
-  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Regulamento"), h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => copyText(reg.map(([t, ps]) => t + "\n" + ps.join("\n")).join("\n\n")) }, "Copiar texto"), h("button", { class: "sm", type: "button", onclick: imprimirRegulamento }, "Imprimir (A4)"))), rbox));
+  linhas();
+  const salvar = () => run(async () => {
+    const nz = (x) => (x && x !== "0" ? x : "");
+    const l = lista.map((p, i) => ({ ordem: String(i + 1), tipo: p.tipo, descricao: (p.descricao || "").trim(), valor_centavos: p.tipo === "PERCENTUAL" ? "" : nz(p.valor_centavos), percentual_bp: p.tipo === "PERCENTUAL" || p.tipo === "MISTO" ? nz(p.percentual_bp) : "" }));
+    const rec = { tipo: "PREMIOS", doc_seq: A.L.nextDoc("PREMIOS"), data: hoje(), lista: l }; if (mot.value.trim()) rec.motivo = mot.value.trim(); await lancar([rec]); toast("Prêmios salvos. A versão anterior continua no histórico público.", "ok"); render(); return true; });
+  v.append(h("section", { class: "card" }, h("h2", null, "Prêmios (flexíveis: podem mudar a qualquer momento, com histórico público)"), box, h("div", { class: "row" }, h("button", { type: "button", disabled: lista.length >= 10, onclick: () => { lista.push({ ordem: String(lista.length + 1), tipo: "DINHEIRO", descricao: "", valor_centavos: "", percentual_bp: "" }); linhas(); } }, "➕ Adicionar prêmio"), h("div", { class: "grow" }, mot), h("button", { class: "primary", type: "button", onclick: salvar }, "Salvar prêmios")),
+    h("p", { class: "hint" }, "Dinheiro = valor fixo; Percentual = % da arrecadação confirmada na apuração; Objeto = bem descrito (valor estimado opcional); Misto = objeto + dinheiro/percentual.")));
+  const hist = s.premiosHist.slice().reverse(); const dt = dataTable({ rows: hist, empty: "Sem histórico.", sort: -1, pageSize: 20, cols: [{ h: "Registro", r: (r) => "#" + r.seq }, { h: "Data", r: (r) => C.fmtDate(r.data) }, { h: "Prêmios", r: (r) => r.lista.length ? r.lista.map((p, i) => (i + 1) + "º " + C.descPremio(p)).join(" | ") : "(nenhum)" }, { h: "Motivo", r: (r) => r.motivo || "—" }, { h: "Situação", r: (r) => r.aposSorteio ? chip("após iniciar a apuração", "warn") : chip("antes da apuração", "off") }] });
+  v.append(h("section", { class: "card" }, h("h2", null, "Histórico público dos prêmios"), dt.el));
+  const reg = regulamentoTexto(); const rbox = h("div", { class: "regul" }); for (const [t, ps] of reg) { rbox.append(h("h3", null, t)); for (const x of ps) rbox.append(h("p", null, x)); }
+  v.append(h("section", { class: "card" }, h("div", { class: "row between" }, h("h2", null, "Regulamento público (gerado do que está configurado)"), h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => copyText(reg.map(([t, ps]) => t + "\n" + ps.join("\n")).join("\n\n")) }, "Copiar texto"), h("button", { class: "sm", type: "button", onclick: () => imprimirRegulamento() }, "Imprimir (A4)"))), rbox));
 }
 function imprimirRegulamento() {
-  const c = st().cfg, pp = h("div", { class: "pp" }, h("h1", null, "Regulamento — " + c.certame), h("div", { class: "meta" }, "Emitido em " + new Date().toLocaleString("pt-BR") + " · livro com " + st().seq + " registro(s), cabeça " + st().head.slice(0, 16) + "…"));
-  for (const [t, ps] of C.regulamentoTexto(st())) { pp.append(h("h2", null, t)); for (const x of ps) pp.append(h("p", null, x)); }
-  pp.append(h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável"));
-  const z = $("print-zone"); clear(z); z.append(pp); const fim = () => { clear(z); window.removeEventListener("afterprint", fim); }; window.addEventListener("afterprint", fim); try { window.print(); } catch (_) { toast("Não foi possível abrir a impressão.", "bad"); }
+  const c = st().cfg, pp = h("div", { class: "pp" }, h("h1", null, "Regulamento — " + c.certame), h("div", { class: "meta" }, "Emitido em " + new Date().toLocaleString("pt-BR") + " · registro #" + st().seq));
+  for (const [t, ps] of regulamentoTexto()) { pp.append(h("h2", null, t)); for (const x of ps) pp.append(h("p", null, x)); }
+  pp.append(h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável")); printNodes([pp]);
 }
 
-/* ---------- livro público ---------- */
-function detalheRegistro(r) {
-  const s = st(), idx = Number(r.seq) - 1, prova = C.merkleProof(s.hashes, idx), mok = C.merkleVerify(r.hash, prova, C.merkleRoot(s.hashes)), anul = s.anulados[r.seq];
-  modal("Registro #" + r.seq + " — " + (C.TIPO_NOME[r.tipo] || r.tipo), h("div", null, kv([["Documento", C.DOC_NOME[C.KIND[r.tipo]] + " nº " + r.doc_seq + " · código " + docCodigo(r)], ["Data do fato", C.fmtDate(r.data)], ["Gravado em", C.fmtIso(r.registrado_em)], ["O que aconteceu", C.resumoRegistro(s, r, nomePub)], ["Situação atual", anul ? chip("anulado/estornado pelo registro #" + anul, "bad") : chip("em vigor", "ok")]]),
-    h("details", { class: "tec" }, h("summary", null, "Dados técnicos de verificação"), kv([["Hash anterior", h("span", { class: "mono brk" }, r.hash_anterior)], ["Hash deste registro", h("span", { class: "mono brk" }, r.hash)], ["Prova de inclusão (Merkle)", mok ? chip("válida · " + prova.length + (prova.length === 1 ? " passo" : " passos"), "ok") : chip("inválida", "bad")]]))), [{ label: "Fechar" }], { wide: true });
+/* ---------- sorteio ---------- */
+function passo(n, titulo, estado, corpo) { return h("section", { class: "card passo" }, h("div", { class: "row between" }, h("h2", null, n + ". " + titulo), estado), corpo); }
+function viewSorteio(v) {
+  const s = st(); if (!s.cfg) return v.append(h("div", { class: "alert info" }, "Crie o certame no Painel primeiro."));
+  const arr = C.arrecadacao(s), el = C.elegiveis(s), dig = s.cfg.metodo === "DIGITAL", cnt = C.contagem(s);
+  v.append(h("div", { class: "alert info" }, "Método configurado: ", h("strong", null, C.METODOS[s.cfg.metodo]), ". Roteiro transparente: cada etapa vira um registro no livro, com código de verificação."));
+  let n = 1;
+  v.append(passo(n++, "Prêmios definidos", s.premios.length ? chip("ok · " + s.premios.length, "ok") : chip("pendente", "warn"), s.premios.length ? h("p", null, s.premios.map((p, i) => (i + 1) + "º: " + C.descPremio(p, arr)).join(" · ")) : h("div", null, h("p", null, "Cadastre ao menos um prêmio."), h("button", { type: "button", onclick: () => { A.view = "premios"; render(); } }, "Ir para Prêmios"))));
+  if (dig) v.append(passo(n++, "Compromisso (hash da semente secreta)", s.compromisso ? chip("registrado #" + s.compromisso.seq, "ok") : chip("pendente", "warn"), corpoCompromisso()));
+  v.append(passo(n++, "Encerrar as vendas (congela a lista de elegíveis)", s.vendasEnc ? chip("encerradas", "ok") : chip("abertas", "warn"), corpoEncerrar(el, arr, cnt)));
+  v.append(passo(n++, "Apuração", s.sorteios.length >= s.premios.length && s.premios.length ? chip("concluída", "ok") : chip(s.sorteios.length + " de " + s.premios.length, "info"), corpoApuracao(el, arr)));
+  v.append(resultados());
 }
+function corpoCompromisso() {
+  const s = st(), box = h("div");
+  if (s.compromisso) {
+    box.append(kv([["Hash da semente (público)", h("span", { class: "mono" }, s.compromisso.hash)], ["Registrado em", C.fmtDate(s.compromisso.data) + " · registro #" + s.compromisso.seq]]));
+    const ok = A.segredo && C.commitHash(A.segredo.seed) === s.compromisso.hash;
+    if (!s.vendasEnc && !s.sorteios.length) box.append(h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => run(async () => { if (!(await confirmDlg("Substituir compromisso", "Será gerada uma NOVA semente e registrado um novo compromisso. O anterior continua visível no livro, mas deixa de valer. Continuar?", "Substituir"))) return; const seed = C.novaSemente(), hash = C.commitHash(seed); const anterior = A.segredo; A.segredo = { seed, hash }; await Store.putMany("kv", [["segredo", A.segredo]]); try { await lancar([{ tipo: "COMPROMISSO", doc_seq: A.L.nextDoc("COMPROMISSO"), data: hoje(), hash_semente: hash }]); } catch (e) { A.segredo = anterior; if (anterior) await Store.putMany("kv", [["segredo", anterior]]); throw e; } render(); toast("Novo compromisso registrado. Publique o novo hash.", "ok"); }) }, "Substituir compromisso (nova semente)")));
+    if (ok) box.append(h("div", { class: "alert ok" }, "A semente secreta está guardada neste aparelho e confere com o compromisso.", h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => downloadBlob("semente-secreta-rifa.txt", new Blob(["SEMENTE SECRETA — NÃO PUBLICAR ANTES DO SORTEIO\nCertame: " + s.cfg.certame + "\nHash público: " + s.compromisso.hash + "\nSemente: " + A.segredo.seed + "\n"], { type: "text/plain" })) }, "Baixar cópia da semente (guarde em local privado)"))));
+    else { const campo = input({ placeholder: "Cole aqui a semente (64 caracteres hexadecimais)", maxlength: 64 }); box.append(h("div", { class: "alert warn" }, "A semente não está neste aparelho. Cole-a para poder apurar:"), h("div", { class: "row" }, h("div", { class: "grow" }, campo), h("button", { type: "button", onclick: () => run(async () => { const x = campo.value.trim().toLowerCase(); if (C.commitHash(x) !== s.compromisso.hash) throw E("Essa semente não confere com o hash registrado."); A.segredo = { seed: x, hash: s.compromisso.hash }; await Store.putMany("kv", [["segredo", A.segredo]]); render(); toast("Semente conferida e guardada.", "ok"); }) }, "Conferir e guardar"))); }
+    return box;
+  }
+  box.append(h("p", null, "Gera uma semente aleatória (só neste aparelho) e registra no livro apenas o seu hash SHA-256. Publique o hash para os participantes antes de encerrar as vendas."), h("button", { class: "primary", type: "button", disabled: s.vendasEnc, onclick: () => run(async () => {
+    if (!(await confirmDlg("Registrar compromisso", "A semente será gerada agora e guardada neste aparelho. Faça uma cópia segura dela: sem a semente não é possível apurar o sorteio digital. Continuar?", "Gerar e registrar"))) return;
+    const seed = C.novaSemente(), hash = C.commitHash(seed); A.segredo = { seed, hash }; await Store.putMany("kv", [["segredo", A.segredo]]);
+    await lancar([{ tipo: "COMPROMISSO", doc_seq: A.L.nextDoc("COMPROMISSO"), data: hoje(), hash_semente: hash }]); render(); toast("Compromisso registrado. Publique o hash e guarde a semente.", "ok"); }) }, "Gerar semente e registrar compromisso"));
+  return box;
+}
+function corpoEncerrar(el, arr, cnt) {
+  const s = st(), box = h("div");
+  if (!s.vendasEnc) {
+    box.append(kv([["Bilhetes pagos (elegíveis)", String(el.length)], ["Arrecadação confirmada", brl(arr)], ["Reservas pendentes", cnt.reservados + " (não participam; fique à vontade para liberar ou cobrar antes)"], ["Hash da lista de elegíveis", h("span", { class: "mono" }, C.listaHash(el))]]));
+    const dig = s.cfg.metodo === "DIGITAL", falta = [];
+    if (!el.length) falta.push("registre ao menos 1 pagamento no Painel"); if (dig && !s.compromisso) falta.push("registre o compromisso (passo 2)");
+    if (falta.length) box.append(h("div", { class: "alert warn" }, "Para encerrar as vendas: " + falta.join(" e ") + "."));
+    box.append(h("button", { class: "primary", type: "button", disabled: !el.length || (dig && !s.compromisso), onclick: () => run(async () => {
+      if (!(await confirmDlg("Encerrar vendas", "A lista de " + el.length + " bilhete(s) pago(s) será congelada. Reservas pendentes (" + cnt.reservados + ") não participam. Só é possível reabrir enquanto não houver apuração. Continuar?", "Encerrar vendas"))) return;
+      await lancar([{ tipo: "VENDAS", doc_seq: A.L.nextDoc("VENDAS"), data: hoje(), acao: "ENCERRAR", lista_pagos_hash: C.listaHash(el), total_pagos: String(el.length), arrecadacao_centavos: String(arr) }]); render(); toast("Vendas encerradas e lista congelada.", "ok"); }) }, "Encerrar vendas"));
+  } else {
+    const ult = s.vendasLog[s.vendasLog.length - 1]; box.append(kv([["Encerradas em", C.fmtDate(ult.data) + " · registro #" + ult.seq], ["Elegíveis ainda não premiados", String(el.length)]]));
+    const mot = input({ maxlength: 160, placeholder: "Motivo para reabrir (obrigatório)" });
+    box.append(h("div", { class: "row" }, h("div", { class: "grow" }, mot), h("button", { type: "button", disabled: s.sorteios.length > 0 || s.tentativas.length > 0, title: "Anule as apurações antes de reabrir", onclick: () => run(async () => { await lancar([{ tipo: "VENDAS", doc_seq: A.L.nextDoc("VENDAS"), data: hoje(), acao: "REABRIR", motivo: mot.value.trim() }]); render(); toast("Vendas reabertas.", "ok"); }) }, "Reabrir vendas")));
+  }
+  return box;
+}
+function montarApuracao(extra) {
+  const s = st(), el = C.elegiveis(s), arr = C.arrecadacao(s), ordem = s.sorteios.length + 1, pr = s.premios[ordem - 1];
+  return Object.assign({ tipo: "SORTEIO", doc_seq: A.L.nextDoc("SORTEIO"), data: hoje(), ordem: String(ordem), metodo: s.cfg.metodo, lista_pagos_hash: C.listaHash(el), arrecadacao_centavos: String(arr), premio_valor_centavos: String(C.valorPremio(pr, arr)) }, extra);
+}
+function corpoApuracao(el, arr) {
+  const s = st(), box = h("div");
+  if (!s.vendasEnc) return h("p", { class: "muted" }, "Encerre as vendas para liberar a apuração.");
+  if (!s.premios.length || s.sorteios.length >= s.premios.length) return h("p", null, s.premios.length ? "Todos os prêmios foram apurados." : "Cadastre prêmios.");
+  const ordem = s.sorteios.length + 1, pr = s.premios[ordem - 1];
+  box.append(h("p", null, "Apurando o ", h("strong", null, ordem + "º prêmio"), ": ", C.descPremio(pr, arr), ". Valor hoje: ", h("strong", null, brl(C.valorPremio(pr, arr))), "."));
+  if (!el.length) return box.append(h("div", { class: "alert warn" }, "Não restam bilhetes pagos elegíveis.")), box;
+  const prev = h("div", { class: "live", "aria-live": "polite" });
+  const registrar = async (resFn) => { const x = await resFn(); };
+  if (s.cfg.metodo === "FEDERAL") {
+    const fed = input({ inputmode: "numeric", maxlength: 12, placeholder: "Ex.: 045843", "aria-label": "Número da Loteria Federal" }), conc = input({ value: s.cfg.concurso, maxlength: 60, "aria-label": "Concurso" });
+    const calc = () => { clear(prev); const d = digitos(fed.value); if (!d) { prev.textContent = "Digite o número sorteado pela Loteria Federal para ver o bilhete."; return null; } try { const f = C.federalBilhete(s, d); prev.textContent = "Base: últimos " + C.padW(Number(s.cfg.total)) + " dígitos mod " + s.cfg.total + " = " + f.v + " (bilhete " + fnum(f.v) + ") → " + (f.bilhete == null ? "SEM GANHADOR nesta apuração (bilhete-base não pago; regra: novo concurso)" : "ganhador: bilhete " + fnum(f.bilhete) + (f.proximo ? " (próximo pago)" : "") + " — " + nomeP(s.t[f.bilhete].comp)); return f; } catch (e) { prev.textContent = limpaMsg(e.message); return null; } };
+    fed.addEventListener("input", calc); calc();
+    box.append(h("div", { class: "grid g2" }, field("Número sorteado (Loteria Federal)", fed, "Digite exatamente como divulgado pela Caixa. Fica gravado no livro."), field("Concurso / referência", conc)), prev,
+      h("button", { class: "primary", type: "button", onclick: () => run(async () => { const d = digitos(fed.value), f = C.federalBilhete(s, d);
+        if (!(await confirmDlg("Registrar apuração", "Registrar o número " + d + " (" + (conc.value.trim() || "sem concurso") + ") para o " + ordem + "º prêmio? Isso não pode ser apagado (só anulado com estorno).", "Registrar apuração"))) return;
+        const rec = montarApuracao({ premio_federal: d, concurso_fed: conc.value.trim(), numero_base: String(f.v), resultado: f.bilhete == null ? "SEM_GANHADOR" : "GANHADOR", bilhete: f.bilhete == null ? "" : String(f.bilhete) });
+        const [r] = await lancar([rec]); render(); resultadoModal(r); }) }, "Registrar apuração"));
+  } else {
+    const ok = A.segredo && s.compromisso && C.commitHash(A.segredo.seed) === s.compromisso.hash;
+    if (!ok) return box.append(h("div", { class: "alert warn" }, "Semente indisponível: cole a semente no passo do compromisso.")), box;
+    const ent = input({ maxlength: 200, placeholder: "Opcional: ex. resultado público de uma loteria, combinado com o grupo", "aria-label": "Entropia pública" });
+    const lh = C.listaHash(el), calc = () => { const b = el[C.digitalIndex(A.segredo.seed, ent.value.trim(), lh, String(ordem), el.length)]; prev.textContent = "Resultado calculado: bilhete " + fnum(b) + " — " + nomeP(s.t[b].comp) + " (nada é gravado até você confirmar)."; return b; };
+    ent.addEventListener("input", calc); calc();
+    box.append(field("Entropia pública (opcional)", ent, "Se usar, combine e anuncie antes. Ela entra no cálculo junto com a semente revelada."), prev,
+      h("button", { class: "primary", type: "button", onclick: () => run(async () => { const e = ent.value.trim(), b = calc();
+        if (!(await confirmDlg("Revelar semente e sortear", "A semente secreta será revelada no livro e o bilhete " + fnum(b) + " será sorteado para o " + ordem + "º prêmio. Continuar?", "Sortear"))) return;
+        const rec = montarApuracao({ semente: A.segredo.seed, entropia: e, resultado: "GANHADOR", bilhete: String(b), numero_base: "" }); const [r] = await lancar([rec]); render(); resultadoModal(r); }) }, "Revelar semente e sortear"));
+  }
+  return box;
+}
+function resultadoModal(r) {
+  const s = st(), pr = s.premios[Number(r.ordem) - 1];
+  if (r.resultado !== "GANHADOR") { toast("Sem ganhador nesta apuração (bilhete-base " + C.fmtNum(Number(r.numero_base), s.cfg.total) + " não pago). Aguarde o novo concurso e registre outro número.", "ok", 12000); return; }
+  const n = Number(r.bilhete), t = s.t[n];
+  modal("🏆 " + r.ordem + "º prêmio — bilhete " + fnum(n), h("div", null, h("div", { class: "winner" }, h("div", { class: "wn" }, fnum(n)), h("div", null, h("strong", null, nomeP(t.comp)), h("div", { class: "muted" }, "Prêmio: " + C.descPremio(pr, BigInt(r.arrecadacao_centavos)), " · valor " + brl(r.premio_valor_centavos)))), h("p", { class: "hint" }, "Ata nº " + docCodigo(r) + " · registro #" + r.seq)), [{ label: "Fechar" }, { label: "Imprimir ata", kind: "primary", onClick: () => { setTimeout(() => imprimirAta(r), 20); } }]);
+}
+function resultados() {
+  const s = st(), arr = C.arrecadacao(s), box = h("section", { class: "card" }, h("h2", null, "Resultados registrados"));
+  if (!s.sorteios.length && !s.tentativas.length) return box.append(h("p", { class: "muted" }, "Nenhuma apuração registrada ainda.")), box;
+  const rows = s.sorteios.map((x, i) => x); const dt = dataTable({ rows, sort: -1, empty: "—", cols: [{ h: "Prêmio", r: (x) => x.ordem + "º" }, { h: "Descrição", r: (x) => C.descPremio(s.premios[x.ordem - 1] || { tipo: "OBJETO", descricao: "(removido)" }, BigInt(x.arrecadacao)) }, { h: "Bilhete", r: (x) => h("strong", null, fnum(x.bilhete)) }, { h: "Ganhador", r: (x) => nomeP(s.t[x.bilhete] && s.t[x.bilhete].comp) }, { h: "Valor", cls: "num", r: (x) => brl(x.premio_valor) }, { h: "Origem", r: (x) => x.metodo === "FEDERAL" ? "Federal " + x.premio_federal + (x.concurso ? " (" + x.concurso + ")" : "") + " → base " + x.numero_base : "Digital · semente revelada" }, { h: "Data", r: (x) => C.fmtDate(x.data) },
+    { h: "Ata", r: (x) => h("button", { class: "sm", type: "button", onclick: () => imprimirAta(s.movs[x.seq - 1]) }, "Imprimir") }] });
+  box.append(dt.el);
+  if (s.tentativas.length) box.append(h("h3", null, "Apurações sem ganhador"), h("ul", null, s.tentativas.map((t) => h("li", null, "Registro #" + t.seq + ": " + t.ordem + "º prêmio, número " + t.premio_federal + " — bilhete-base não pago (aguardando novo concurso)."))));
+  if (s.sorteios.length) { const ult = s.sorteios[s.sorteios.length - 1]; box.append(h("div", { class: "row", style: { marginTop: ".8rem" } }, h("button", { class: "danger", type: "button", onclick: () => dlgAnular(ult) }, "Anular a última apuração (corrigir erro)"), h("span", { class: "hint" }, "Cria um estorno no livro; nada é apagado."))); }
+  return box;
+}
+function imprimirAta(r) {
+  const s = st(), c = s.cfg, pr = s.premios[Number(r.ordem) - 1] || { tipo: "OBJETO", descricao: "(prêmio removido)" }, tem = r.resultado === "GANHADOR", n = tem ? Number(r.bilhete) : null, t = tem ? (s.t[n] || {}) : {};
+  const sorteio = s.sorteios.find((x) => x.seq === Number(r.seq));
+  const pp = h("div", { class: "pp" }, h("h1", null, "Ata de apuração — " + c.certame), h("div", { class: "meta" }, "Documento " + docCodigo(r) + " · registro #" + r.seq + " · " + C.fmtDate(r.data) + " · " + C.METODOS[r.metodo]),
+    h("h2", null, r.ordem + "º prêmio"), h("p", null, C.descPremio(pr, BigInt(r.arrecadacao_centavos)) + " — valor apurado " + brl(r.premio_valor_centavos) + " (arrecadação confirmada " + brl(r.arrecadacao_centavos) + ")."),
+    h("h2", null, "Resultado"), h("p", null, tem ? "Bilhete " + fnum(n) + " — comprador " + nomeP(t.comp) + " (" + (t.comp || "") + ")." : "SEM GANHADOR nesta apuração: o bilhete-base não estava pago e a regra é aguardar novo concurso."),
+    h("h2", null, "Parâmetros verificáveis"), r.metodo === "FEDERAL" ? h("table", null, h("tbody", null, linhaT("Número da Loteria Federal", r.premio_federal), linhaT("Concurso", r.concurso_fed || "—"), linhaT("Total de bilhetes", c.total), linhaT("Número-base (últimos " + C.padW(Number(c.total)) + " dígitos mod " + c.total + ")", r.numero_base), linhaT("Regra se não pago", c.regra_vazio === "PROXIMO" ? "próximo bilhete pago (circular)" : "novo concurso"), linhaT("Hash da lista de pagos elegíveis", r.lista_pagos_hash)))
+      : h("table", null, h("tbody", null, linhaT("Compromisso (hash da semente)", s.compromisso ? s.compromisso.hash : "—"), linhaT("Semente revelada", r.semente), linhaT("Entropia pública", r.entropia || "(nenhuma)"), linhaT("Hash da lista de pagos elegíveis", r.lista_pagos_hash), linhaT("Cálculo", "SHA-256(\"RIFA-DRAW\" ␟ semente ␟ entropia ␟ hash da lista ␟ ordem ␟ contador), com rejeição de viés, índice na lista ordenada"))),
+    h("div", { class: "hash" }, "Hash do registro: " + r.hash), h("div", { class: "hash" }, "Raiz Merkle do livro (até #" + s.seq + "): " + C.merkleRoot(s.hashes)),
+    h("div", { class: "sig" }, h("div", null, "Organizador"), h("div", null, "Testemunha")), h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável"));
+  printNodes([pp]);
+}
+const linhaT = (a, b, mono) => h("tr", null, h("th", { scope: "row" }, a), h("td", { class: mono === false ? "" : "mono" }, b == null || b === "" ? "—" : String(b)));
+
+/* Rifa — interface 3: bilhete gráfico HD, impressão, livro e auditoria, relatórios, ajustes, backup/importação, inicialização */
+
+/* ---------- impressão ---------- */
+function printNodes(nodes) {
+  const z = $("print-zone"); clear(z); for (const n of nodes) z.append(n);
+  const fim = () => { clear(z); window.removeEventListener("afterprint", fim); };
+  window.addEventListener("afterprint", fim);
+  try { window.print(); } catch (e) { toast("Não foi possível abrir a impressão deste navegador.", "bad"); }
+}
+
+/* ---------- bilhete gráfico em alta resolução (canvas) ---------- */
+const TK = { W: 1200, H: 480, verde: "#064e3b", verde2: "#047857", claro: "#ecfdf5", texto: "#0f172a", ambar: "#b45309", ouro: "#fbbf24", azul: "#1e3a8a" };
+function fitText(ctx, txt, maxW, size, weight, min) {
+  let s = size; txt = String(txt);
+  for (; s > (min || 14); s -= 2) { ctx.font = weight + " " + s + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; if (ctx.measureText(txt).width <= maxW) return { size: s, txt }; }
+  ctx.font = weight + " " + s + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; let t = txt; while (t.length > 1 && ctx.measureText(t + "…").width > maxW) t = t.slice(0, -1); return { size: s, txt: t + "…" };
+}
+function rrect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+/** desenha o bilhete n do estado atual; scale 1 = 1200×480, 1.5 = 1800×720 */
+function drawTicket(canvas, n, scale) {
+  const s = st(), c = s.cfg, t = s.t[n], W = TK.W, H = TK.H; scale = scale || 1; canvas.width = Math.round(W * scale); canvas.height = Math.round(H * scale);
+  const ctx = canvas.getContext("2d"); ctx.setTransform(scale, 0, 0, scale, 0, 0); ctx.textBaseline = "alphabetic";
+  const F = (sz, w) => { ctx.font = w + " " + sz + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; };
+  const pago = t && t.st === "PAGO", prem = t && t.premio != null, code = C.codigoBilhete(s, n), arr = C.arrecadacao(s);
+  ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+  rrect(ctx, 6, 6, W - 12, H - 12, 28); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.lineWidth = 8; ctx.strokeStyle = TK.verde; ctx.stroke();
+  /* canhoto */
+  ctx.save(); rrect(ctx, 6, 6, W - 12, H - 12, 28); ctx.clip(); const g = ctx.createLinearGradient(0, 0, 300, H); g.addColorStop(0, TK.verde); g.addColorStop(1, TK.verde2); ctx.fillStyle = g; ctx.fillRect(0, 0, 300, H); ctx.restore();
+  ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; F(30, 700); ctx.fillText("BILHETE Nº", 150, 92);
+  const num = fitText(ctx, fnum(n), 250, 170, 800, 60); ctx.font = "800 " + num.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(num.txt, 150, 250);
+  F(24, 600); ctx.fillText("de " + c.total + " bilhetes", 150, 300); F(22, 600); ctx.fillText(brl(t && pago ? t.unit : c.valor_ponto_centavos), 150, 352);
+  F(18, 600); ctx.fillText(code ? "Cód. " + code.slice(0, 9) : "", 150, 420);
+  /* picote */
+  ctx.setLineDash([12, 10]); ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(300, 30); ctx.lineTo(300, H - 30); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#ffffff"; ctx.strokeStyle = TK.verde; ctx.lineWidth = 8; for (const y of [6, H - 6]) { ctx.beginPath(); ctx.arc(300, y, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+  /* cabeçalho */
+  ctx.fillStyle = TK.claro; ctx.fillRect(320, 20, W - 340, 116); ctx.fillStyle = TK.verde2; ctx.fillRect(320, 130, W - 340, 6);
+  ctx.textAlign = "left"; ctx.fillStyle = TK.texto; const ti = fitText(ctx, c.certame, W - 380, 52, 800, 26); ctx.font = "800 " + ti.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(ti.txt, 340, 76);
+  const be = fitText(ctx, "Em benefício de: " + (c.beneficiario || "—"), W - 380, 28, 600, 18); ctx.fillStyle = "#334155"; ctx.font = "600 " + be.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(be.txt, 340, 116);
+  /* prêmios */
+  ctx.fillStyle = TK.verde; F(26, 800); ctx.fillText("PRÊMIOS", 340, 180); ctx.fillStyle = TK.texto;
+  const pr = s.premios.slice(0, 3); let y = 214; if (!pr.length) { F(26, 600); ctx.fillText("A definir pelo organizador", 340, y); }
+  pr.forEach((p, i) => { const f = fitText(ctx, (i + 1) + "º  " + C.descPremio(p, arr), 560, 28, 700, 16); ctx.font = "700 " + f.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(f.txt, 340, y); y += 36; });
+  if (s.premios.length > 3) { F(20, 600); ctx.fillStyle = "#334155"; ctx.fillText("+ " + (s.premios.length - 3) + " prêmio(s) — veja o regulamento", 340, y); }
+  /* sorteio */
+  ctx.fillStyle = TK.texto; const dsort = c.data_sorteio ? C.fmtDate(c.data_sorteio.slice(0, 10)) + " às " + c.data_sorteio.slice(11, 16) : "data a definir"; const so = fitText(ctx, "Sorteio: " + dsort + " · " + (c.metodo === "FEDERAL" ? "Loteria Federal" : "Sorteio digital verificável"), 560, 24, 700, 16); ctx.font = "700 " + so.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(so.txt, 340, 330);
+  /* comprador e situação */
+  const nm = fitText(ctx, "Comprador: " + nomeP(t && t.comp), 560, 30, 800, 18); ctx.fillStyle = TK.texto; ctx.font = "800 " + nm.size + "px system-ui, 'Segoe UI', Roboto, Arial, sans-serif"; ctx.fillText(nm.txt, 340, 374);
+  const tag = prem ? "★ PREMIADO — " + t.premio + "º PRÊMIO" : pago ? "✓ PAGO" : "R  AGUARDANDO PAGAMENTO"; F(26, 800); const tw = ctx.measureText(tag).width + 40; rrect(ctx, 340, 388, tw, 44, 22); ctx.fillStyle = prem ? TK.ouro : pago ? TK.verde2 : TK.ambar; ctx.fill(); ctx.fillStyle = prem ? "#111827" : "#ffffff"; ctx.fillText(tag, 360, 420);
+  /* QR de verificação */
+  try {
+    const q = C.QR.make("RIFA|" + fnum(n) + "|" + code + "|" + (t && t.st) + "|#" + s.seq), cell = Math.max(3, Math.floor(200 / (q.size + 8))), box = (q.size + 8) * cell, qx = W - 40 - box, qy = 150;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(qx, qy, box, box); ctx.strokeStyle = TK.verde; ctx.lineWidth = 3; ctx.strokeRect(qx, qy, box, box); ctx.fillStyle = "#000000";
+    for (let yy = 0; yy < q.size; yy++) for (let xx = 0; xx < q.size; xx++) if (q.get(xx, yy)) ctx.fillRect(qx + (xx + 4) * cell, qy + (yy + 4) * cell, cell, cell);
+    ctx.textAlign = "center"; ctx.fillStyle = TK.texto; F(18, 700); ctx.fillText("Verificação", qx + box / 2, qy + box + 24);
+  } catch (_) {}
+  /* rodapé */
+  ctx.textAlign = "left"; ctx.fillStyle = "#334155"; F(17, 600); ctx.fillText("Cód. de verificação: " + code + " · livro #" + s.seq + " · © Carlos Alberto Reis 2026", 340, H - 16);
+  /* marca d'água de reserva */
+  if (!pago) { ctx.save(); ctx.translate(W / 2 + 100, H / 2); ctx.rotate(-0.35); ctx.globalAlpha = 0.16; ctx.fillStyle = TK.ambar; ctx.textAlign = "center"; F(120, 900); ctx.fillText("RESERVADO", 0, 40); ctx.restore(); }
+  return canvas;
+}
+function canvasParaBlob(canvas) { return new Promise((res, rej) => canvas.toBlob((b) => b ? res(b) : rej(E("Não foi possível gerar a imagem.")), "image/png")); }
+function mostrarBilhetes(nums, recPag) {
+  const s = st(), arr = nums.slice().sort((a, b) => a - b), MAX = 8, wrap = h("div", { class: "tickets" });
+  for (const n of arr.slice(0, MAX)) {
+    const cv = h("canvas", { class: "tkcanvas", role: "img", "aria-label": "Bilhete " + fnum(n) }); drawTicket(cv, n, 1);
+    wrap.append(h("figure", null, cv, h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: () => run(async () => { const big = document.createElement("canvas"); drawTicket(big, n, 1.5); downloadBlob("bilhete-" + fnum(n) + ".png", await canvasParaBlob(big)); }) }, "Baixar PNG (HD)"))));
+  }
+  const corpo = h("div", null, recPag ? h("div", { class: "alert ok" }, "Pagamento registrado. Recibo nº ", h("strong", null, docCodigo(recPag)), " · registro #" + recPag.seq + ".") : null, wrap, arr.length > MAX ? h("p", { class: "hint" }, "Mostrando os " + MAX + " primeiros de " + arr.length + "; “Imprimir todos” e “Baixar todos” incluem todos.") : null);
+  const acts = [{ label: "Fechar" }];
+  if (recPag) acts.push({ label: "Imprimir recibo", onClick: () => { setTimeout(() => imprimirRecibo(recPag), 20); } });
+  acts.push({ label: "Enviar ao participante…", onClick: () => { setTimeout(() => run(() => enviarParticipante(arr, recPag)), 30); } });
+  acts.push({ label: "Baixar todos (PNG)", onClick: async () => { await run(async () => { for (const n of arr) { const big = document.createElement("canvas"); drawTicket(big, n, 1.5); downloadBlob("bilhete-" + fnum(n) + ".png", await canvasParaBlob(big)); await sleep(250); } }); return false; } });
+  acts.push({ label: "Imprimir todos", kind: "primary", onClick: () => { setTimeout(() => imprimirBilhetes(arr), 20); } });
+  modal("Bilhetes (" + arr.length + ")", corpo, acts, { wide: true });
+}
+function imprimirBilhetes(arr) {
+  const pp = h("div", { class: "pp bilhetes" }); const cv = document.createElement("canvas");
+  for (const n of arr) { drawTicket(cv, n, 1); pp.append(h("img", { class: "bimg", alt: "Bilhete " + fnum(n), src: cv.toDataURL("image/png") })); }
+  pp.append(h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável")); printNodes([pp]);
+}
+function imprimirRecibo(r) {
+  const s = st(), c = s.cfg, nums = C.parseTickets(r.bilhetes), u = BigInt(r.valor_unit_centavos), total = u * BigInt(nums.length), cod = docCodigo(r);
+  const via = (t) => h("div", { class: "via" }, h("h1", null, "Recibo de pagamento — " + c.certame), h("div", { class: "meta" }, t + " · documento " + cod + " · registro #" + r.seq + " · " + C.fmtDate(r.data)),
+    h("p", null, "Recebemos de " + nomeP(r.comprador) + " (" + r.comprador + ") o valor de " + brl(total) + " referente a " + nums.length + " bilhete(s) do certame “" + c.certame + "”, pago por " + r.forma + (r.obs ? " (" + r.obs + ")" : "") + "."),
+    h("table", null, h("thead", null, h("tr", null, h("th", null, "Bilhetes"), h("th", { class: "num" }, "Qtde"), h("th", { class: "num" }, "Valor unit."), h("th", { class: "num" }, "Total"))), h("tbody", null, h("tr", null, h("td", null, nums.map(fnum).join(", ")), h("td", { class: "num" }, String(nums.length)), h("td", { class: "num" }, brl(u)), h("td", { class: "num" }, brl(total))))),
+    h("div", { class: "hash" }, "Hash do registro: " + r.hash), h("div", { class: "sig" }, h("div", null, "Organizador"), h("div", null, "Comprador")));
+  printNodes([h("div", { class: "pp" }, via("1ª via — comprador"), via("2ª via — organizador"), h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável"))]);
+}
+
+/* ---------- livro e auditoria ---------- */
+const resumoRec = (r) => C.resumoRegistro(st(), r, nomeP);
+function textoAncora() { const s = st(); return "RIFA-ÂNCORA · " + (s.cfg ? s.cfg.certame : "") + " · registros=" + s.seq + " · cabeça=" + s.head + " · raiz-merkle=" + C.merkleRoot(s.hashes) + " · " + new Date().toISOString(); }
 function viewLivro(v) {
-  const s = st(), out = h("div", { id: "verif" }), o = P.obj;
-  v.append(h("section", { class: "card" }, h("h2", null, "Auditoria do livro"), kv([["Registros", String(s.seq)], ["Identificador do certame", h("span", { class: "mono" }, o.certame_id)], ["Hash da cabeça", h("span", { class: "mono brk" }, s.head)], ["Raiz Merkle", h("span", { class: "mono brk" }, C.merkleRoot(s.hashes))], ["Âncora publicada", chip("confere com o livro", "ok")], ["Motor SHA-256", C.engine === "wasm" ? "WebAssembly (verificado com vetor de teste)" : "JavaScript"], ["Origem dos dados", P.origem === "arquivo local" ? "arquivo local" : "portal.json publicado"], ["Publicado em", o.gerado_em ? C.fmtIso(o.gerado_em) : "—"]]),
-    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: () => run(async () => { clear(out); const bar = h("div", { class: "live" }, "Verificando…"); out.append(bar); const res = await C.verifyRecords(JSON.parse(JSON.stringify(P.obj.registros)), { onProgress: (i, n) => { bar.textContent = "Verificando… " + i + "/" + n; } }); clear(out); out.append(res.ok ? h("div", { class: "alert ok" }, "✓ Cadeia íntegra: " + res.count + " registro(s) recalculados do zero no seu navegador, todas as regras reaplicadas.") : h("div", { class: "alert bad" }, "✗ Falha no registro #" + res.errors[0].seq + ": " + limpaMsg(res.errors[0].msg))); }) }, "Verificar de novo agora"),
-      h("button", { type: "button", onclick: () => downloadBlob("portal.json", new Blob([JSON.stringify(P.obj)], { type: "application/json" })) }, "Baixar o livro (portal.json)"), h("button", { type: "button", onclick: () => copyText("RIFA-ÂNCORA · " + s.cfg.certame + " · registros=" + s.seq + " · cabeça=" + s.head + " · raiz-merkle=" + C.merkleRoot(s.hashes)) }, "Copiar âncora")), out,
-    h("p", { class: "hint" }, "O histórico de versões deste site no GitHub também é público: cada publicação do livro é um commit com data, o que dificulta apagar ou reescrever o passado sem deixar rastro.")));
+  const s = st(); const out = h("div", { id: "verif" });
+  v.append(h("section", { class: "card" }, h("h2", null, "Auditoria do livro"), kv([["Registros", String(s.seq)], ["Hash da cabeça", h("span", { class: "mono brk" }, s.head)], ["Raiz Merkle", h("span", { class: "mono brk" }, C.merkleRoot(s.hashes))], ["Motor SHA-256", C.engine === "wasm" ? "WebAssembly (verificado com vetor de teste)" : "JavaScript (WASM indisponível)"], ["Armazenamento", Store.mode === "idb" ? "IndexedDB" : "localStorage (reserva)"]]),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: () => run(async () => { clear(out); const bar = h("div", { class: "live" }, "Verificando…"); out.append(bar); const res = await C.verifyRecords(A.L.records, { onProgress: (i, n) => { bar.textContent = "Verificando… " + i + "/" + n; } }); clear(out); out.append(res.ok ? h("div", { class: "alert ok" }, "✓ Cadeia íntegra: " + res.count + " registro(s) recalculados do zero, todas as regras reaplicadas.") : h("div", { class: "alert bad" }, "✗ Falha no registro #" + res.errors[0].seq + ": " + limpaMsg(res.errors[0].msg))); }) }, "Verificar cadeia agora"),
+      h("button", { type: "button", onclick: () => copyText(textoAncora()) }, "Copiar âncora (publique para provar o estado)"), h("button", { type: "button", onclick: () => baixarCsvLivro() }, "Exportar livro (CSV)")), out,
+    h("p", { class: "hint" }, "Dica: publique a âncora no grupo da rifa de vez em quando. Qualquer mudança feita depois no passado fará a cabeça/raiz divergirem dela.")));
   const filtro = input({ type: "search", placeholder: "Buscar no livro…", "aria-label": "Buscar no livro" }), tipo = select([{ v: "", t: "Todos os tipos" }].concat(Object.keys(C.TIPO_NOME).map((k) => ({ v: k, t: C.TIPO_NOME[k] }))), "", { "aria-label": "Tipo" });
-  const todos = s.movs.slice().reverse(); let dt; const aplica = () => { const f = filtro.value.trim().toLowerCase(); dt.setRows(todos.filter((r) => (!tipo.value || r.tipo === tipo.value) && (!f || (C.resumoRegistro(s, r, nomePub) + " " + r.seq + " " + docCodigo(r)).toLowerCase().includes(f)))); };
-  dt = dataTable({ rows: todos, sort: -1, pageSize: 40, empty: "Sem registros.", onRow: detalheRegistro, rowClass: (r) => s.anulados[r.seq] ? "void" : "", cols: [{ h: "Nº", cls: "num", v: (r) => Number(r.seq), r: (r) => r.seq }, { h: "Data", v: (r) => r.data, r: (r) => C.fmtDate(r.data) }, { h: "Tipo", r: (r) => chip(C.TIPO_NOME[r.tipo] || r.tipo, r.tipo === "ESTORNO" ? "bad" : r.tipo === "SORTEIO" ? "info" : r.tipo === "PAGAMENTO" ? "ok" : "off") }, { h: "Documento", r: (r) => h("span", { class: "mono" }, docCodigo(r)) }, { h: "Resumo", r: (r) => C.resumoRegistro(s, r, nomePub) }, { h: "Hash", r: (r) => h("span", { class: "mono" }, shortHash(r.hash)) }] });
+  const todos = s.movs.slice().reverse(); let dt;
+  const aplica = () => { const f = filtro.value.trim().toLowerCase(); dt.setRows(todos.filter((r) => (!tipo.value || r.tipo === tipo.value) && (!f || (resumoRec(r) + " " + r.seq + " " + docCodigo(r)).toLowerCase().includes(f)))); };
+  dt = dataTable({ rows: todos, sort: -1, pageSize: 40, empty: "Sem registros.", onRow: detalheRegistro, rowClass: (r) => s.anulados[r.seq] ? "void" : "", cols: [{ h: "Nº", cls: "num", v: (r) => Number(r.seq), r: (r) => r.seq }, { h: "Data", v: (r) => r.data, r: (r) => C.fmtDate(r.data) }, { h: "Tipo", r: (r) => chip(C.TIPO_NOME[r.tipo] || r.tipo, r.tipo === "ESTORNO" ? "bad" : r.tipo === "SORTEIO" ? "info" : r.tipo === "PAGAMENTO" ? "ok" : "off") }, { h: "Documento", r: (r) => h("span", { class: "mono" }, docCodigo(r)) }, { h: "Resumo", r: (r) => resumoRec(r) }, { h: "Hash", r: (r) => h("span", { class: "mono" }, shortHash(r.hash)) }] });
   filtro.addEventListener("input", aplica); tipo.addEventListener("change", aplica);
   v.append(h("section", { class: "card" }, h("h2", null, "Registros (mais recente primeiro)"), h("div", { class: "row" }, h("div", { class: "grow" }, filtro), tipo), dt.el));
 }
+function baixarCsvLivro() { const s = st(); downloadBlob("livro-rifa.csv", new Blob([C.csv(["Nº", "Data", "Tipo", "Documento", "Resumo", "Hash"], s.movs.map((r) => [r.seq, r.data, C.TIPO_NOME[r.tipo], docCodigo(r), resumoRec(r), r.hash]))], { type: "text/csv;charset=utf-8" })); }
 
-/* ---------- apoio e inicialização ---------- */
+/* ---------- relatórios ---------- */
+function porForma() { const m = {}; for (const k in st().t) { const t = st().t[k]; if (t.st === "PAGO") { m[t.forma] = m[t.forma] || { n: 0, v: 0n }; m[t.forma].n++; m[t.forma].v += t.unit; } } return m; }
+function viewRelatorios(v) {
+  const s = st(); if (!s.cfg) return v.append(h("div", { class: "alert info" }, "Crie o certame no Painel primeiro."));
+  const arr = C.arrecadacao(s), cnt = C.contagem(s), pf = porForma();
+  v.append(h("section", { class: "card" }, h("h2", null, "Prestação de contas"), h("div", { class: "grid g4" }, kpi("Arrecadado", brl(arr), cnt.pagos + " bilhetes pagos"), kpi("Previsto se tudo for pago", brl(C.previsto(s)), cnt.reservados + " reservados"), kpi("Livres", String(cnt.livres), "de " + cnt.total), kpi("Prêmios (hoje)", brl(s.premios.reduce((a, p) => a + C.valorPremio(p, arr), 0n)), s.premios.length + " prêmio(s)")),
+    h("h3", null, "Por forma de pagamento"), h("div", { class: "tw" }, h("table", null, h("thead", null, h("tr", null, h("th", null, "Forma"), h("th", { class: "num" }, "Bilhetes"), h("th", { class: "num" }, "Valor"))), h("tbody", null, Object.keys(pf).length ? Object.keys(pf).map((k) => h("tr", null, h("td", null, k), h("td", { class: "num" }, String(pf[k].n)), h("td", { class: "num" }, brl(pf[k].v)))) : h("tr", null, h("td", { class: "empty", colspan: 3 }, "Sem pagamentos."))))),
+    h("div", { class: "row", style: { marginTop: ".8rem" } }, h("button", { class: "primary", type: "button", onclick: () => imprimirPrestacao() }, "Imprimir prestação de contas (A4)"), h("button", { type: "button", onclick: () => csvBilhetes() }, "CSV de bilhetes"), h("button", { type: "button", onclick: () => csvElegiveis() }, "CSV de pagos elegíveis (com hash)"), h("button", { type: "button", onclick: () => csvCompradores(false) }, "CSV de compradores"), h("button", { type: "button", onclick: () => baixarCsvLivro() }, "CSV do livro")),
+    h("p", { class: "hint" }, "O CSV de compradores sai sem telefone por padrão; em Ajustes você pode exportar também com telefone.")));
+}
+function baixaCsv(nome, cols, rows) { downloadBlob(nome, new Blob([C.csv(cols, rows)], { type: "text/csv;charset=utf-8" })); }
+function csvBilhetes() { const s = st(), rows = []; for (let i = 0; i < Number(s.cfg.total); i++) { const t = s.t[i]; rows.push([fnum(i), t ? (t.premio != null ? "PREMIADO " + t.premio + "º" : t.st) : "LIVRE", t ? t.comp : "", t ? nomeP(t.comp) : "", t && t.st === "PAGO" ? C.fmtDec(t.unit, 2, 2) : "", t && t.st === "PAGO" ? t.forma : "", t ? t.data : "", t ? C.codigoBilhete(s, i) : ""]); } baixaCsv("bilhetes-rifa.csv", ["Bilhete", "Situação", "Código comprador", "Comprador", "Valor pago (R$)", "Forma", "Data", "Código do bilhete"], rows); }
+function csvElegiveis() { const s = st(), el = C.elegiveis(s); baixaCsv("pagos-elegiveis-rifa.csv", ["Bilhete", "Hash da lista: " + C.listaHash(el)], el.map((n) => [fnum(n), ""])); }
+function csvCompradores(comFone) { baixaCsv("compradores-rifa.csv", ["Código", "Nome"].concat(comFone ? ["Telefone"] : []).concat(["Reservados", "Pagos", "Total pago (R$)"]), resumoCompradores().map((r) => [r.codigo, nomeP(r.codigo)].concat(comFone ? [fmtFone((A.pessoas[r.codigo] || {}).fone)] : []).concat([r.res.length, r.pag.length, C.fmtDec(r.total, 2, 2)]))); }
+function imprimirPrestacao() {
+  const s = st(), c = s.cfg, arr = C.arrecadacao(s), cnt = C.contagem(s), pf = porForma();
+  const pp = h("div", { class: "pp" }, h("h1", null, "Prestação de contas — " + c.certame), h("div", { class: "meta" }, "Emitida em " + new Date().toLocaleString("pt-BR") + " · livro com " + s.seq + " registro(s) · beneficiário: " + (c.beneficiario || "—")),
+    h("h2", null, "Resumo"), h("table", null, h("tbody", null, linhaT("Série", c.total + " bilhetes a " + brl(c.valor_ponto_centavos), false), linhaT("Pagos", String(cnt.pagos), false), linhaT("Reservados (não pagos)", String(cnt.reservados), false), linhaT("Livres", String(cnt.livres), false), linhaT("Arrecadação confirmada", brl(arr), false), linhaT("Situação", statusTxt[C.statusCertame(s)], false), linhaT("Método", C.METODOS[c.metodo], false))),
+    h("h2", null, "Recebimentos por forma"), h("table", null, h("thead", null, h("tr", null, h("th", null, "Forma"), h("th", { class: "num" }, "Bilhetes"), h("th", { class: "num" }, "Valor"))), h("tbody", null, Object.keys(pf).map((k) => h("tr", null, h("td", null, k), h("td", { class: "num" }, String(pf[k].n)), h("td", { class: "num" }, brl(pf[k].v)))), h("tr", { class: "tot" }, h("td", null, "Total"), h("td", { class: "num" }, String(cnt.pagos)), h("td", { class: "num" }, brl(arr))))),
+    h("h2", null, "Prêmios"), h("table", null, h("thead", null, h("tr", null, h("th", null, "Ordem"), h("th", null, "Prêmio"), h("th", null, "Resultado"))), h("tbody", null, s.premios.map((p, i) => { const x = s.sorteios.find((q) => q.ordem === i + 1); return h("tr", null, h("td", null, (i + 1) + "º"), h("td", null, C.descPremio(p, arr)), h("td", null, x ? "Bilhete " + fnum(x.bilhete) + " — " + nomeP(s.t[x.bilhete] && s.t[x.bilhete].comp) + " (" + brl(x.premio_valor) + ")" : "ainda não apurado")); }))),
+    h("h2", null, "Bilhetes por comprador"), h("table", null, h("thead", null, h("tr", null, h("th", null, "Comprador"), h("th", null, "Pagos"), h("th", null, "Reservados"), h("th", { class: "num" }, "Total pago"))), h("tbody", null, resumoCompradores().filter((r) => r.pag.length || r.res.length).map((r) => h("tr", null, h("td", null, nomeP(r.codigo)), h("td", null, r.pag.map(fnum).join(", ") || "—"), h("td", null, r.res.map(fnum).join(", ") || "—"), h("td", { class: "num" }, brl(r.total)))))),
+    h("div", { class: "hash" }, "Cabeça do livro: " + s.head), h("div", { class: "hash" }, "Raiz Merkle: " + C.merkleRoot(s.hashes)), h("div", { class: "sig" }, h("div", null, "Organizador"), h("div", null, "Conferente")), h("div", { class: "foot" }, "© Carlos Alberto Reis 2026 · Rifa — livro verificável. Telefones não constam deste documento."));
+  printNodes([pp]);
+}
+
+/* ---------- backup, importação e substituição ---------- */
+function backupObj(comSemente) { const s = st(); return { formato: "rifa-backup", versao: 1, gerado_em: new Date().toISOString(), certame: s.cfg ? s.cfg.certame : "", registros: A.L.records, pessoas: A.pessoas, publico: A.publico, midiabin: A.midiaBin, segredo: comSemente ? A.segredo : null, cabeca: s.head, raiz_merkle: C.merkleRoot(s.hashes) }; }
+function baixarBackup(comSemente) { const s = st(), nome = "backup-rifa-" + ((s.cfg && s.cfg.certame) || "certame").replace(/[^A-Za-z0-9]+/g, "-").slice(0, 30) + "-" + hoje() + ".json"; downloadBlob(nome, new Blob([JSON.stringify(backupObj(comSemente), null, 1)], { type: "application/json" })); toast("Backup gerado" + (comSemente ? " (contém a semente secreta: guarde com cuidado)." : "."), "ok"); }
+async function substituirTudo(recs, pessoas, segredo, publico, midiabin) {
+  await Store.clear("mov"); await Store.clear("kv"); A.publico = Object.assign({ url: PUB_URL, whatsapp: PUB_WA }, publico || {}); A.midiaBin = midiabin || {}; A.pedidos = {}; await Store.putMany("kv", [["publico", A.publico], ["midiabin", A.midiaBin]]); A.L.load(recs); A.pessoas = pessoas || {}; A.segredo = segredo || null; A.sel.clear(); A.avisoAncora = null; A.erroCarga = null;
+  await Store.putMany("mov", recs.map((r) => [Number(r.seq), r])); await Store.putMany("kv", [["pessoas", A.pessoas]]); if (A.segredo) await Store.putMany("kv", [["segredo", A.segredo]]);
+  const last = recs[recs.length - 1]; if (last) await Store.putMany("kv", [["ancora", { seq: Number(last.seq), hash: last.hash, data: last.registrado_em }]]);
+}
+function legadoParaRegistros(db) {
+  const tk = db.tickets || {}, nums = Object.keys(tk).map((k) => ({ n: parseInt(k, 10), t: tk[k] })).filter((x) => Number.isInteger(x.n) && x.n >= 0);
+  const total = Math.min(10000, Math.max(2, Number(db.totalNumbers) || 0, nums.reduce((m, x) => Math.max(m, x.n + 1), 0))), unit = Math.max(1, Math.round((Number(db.unitValue) || 10) * 100));
+  const L = new C.Ledger(), pess = {}, idx = {}; let ctr = 0, hojeS = hoje();
+  const cod = (nome, fone) => { const key = nome.toLowerCase() + "|" + fone; if (!idx[key]) { ctr++; idx[key] = "CMP-" + String(ctr).padStart(4, "0"); pess[idx[key]] = { nome, fone, criado: new Date().toISOString() }; } return idx[key]; };
+  const certame = String(db.certame || "Certame importado").trim(); const dados = { certame: certame.length >= 3 ? certame.slice(0, 80) : "Certame importado", beneficiario: String(db.beneficiario || "").slice(0, 120), valor_ponto_centavos: String(unit), total: String(total), metodo: db.drawMethod === "automatico" ? "DIGITAL" : "FEDERAL", regra_vazio: "PROXIMO", data_sorteio: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(db.drawDate || "") ? db.drawDate : "", concurso: String(db.federalConcurso || "").slice(0, 60), pix_chave: String(db.pixKey || "").slice(0, 80), pix_titular: String(db.pixTitular || "").slice(0, 60), pix_cidade: "Brasilia", regulamento_extra: "", reserva_aviso_dias: "0" };
+  const p = [{ tipo: "CONFIG", doc_seq: "1", data: hojeS, dados }]; const prem = String(db.prize || "").trim();
+  p.push({ tipo: "PREMIOS", doc_seq: "1", data: hojeS, lista: prem.length >= 2 ? [{ ordem: "1", tipo: "OBJETO", descricao: prem.slice(0, 120), valor_centavos: "", percentual_bp: "" }] : [] });
+  const grupos = {};
+  for (const { n, t } of nums) { if (!t || (t.status !== "reservado" && t.status !== "pago") || n >= total) continue; const nome = String(t.name || "").trim().replace(/\s+/g, " ") || "Sem nome (importado)", fone = digitos(t.phone), c = cod(nome, fone), d = /^\d{4}-\d{2}-\d{2}/.test(t.timestamp || "") ? String(t.timestamp).slice(0, 10) : hojeS, k = c + "|" + t.status + "|" + d; (grupos[k] = grupos[k] || { c, status: t.status, d, ns: [] }).ns.push(n); }
+  let rs = 0, pg = 0;
+  for (const g of Object.values(grupos)) { const ns = C.joinTickets(g.ns); if (g.status === "reservado") p.push({ tipo: "RESERVA", doc_seq: String(++rs), data: g.d, bilhetes: ns, comprador: g.c }); else p.push({ tipo: "PAGAMENTO", doc_seq: String(++pg), data: g.d, bilhetes: ns, comprador: g.c, valor_unit_centavos: String(unit), forma: "Importado (rifa3)", obs: "importado da versão anterior" }); }
+  /* ordem exigida pelas regras: CONFIG, PREMIOS, depois movimentos */
+  L.append(p, undefined); return { recs: L.records, pessoas: pess, total, qtd: nums.filter((x) => x.t && (x.t.status === "reservado" || x.t.status === "pago")).length };
+}
+function importarArquivo() {
+  const f = h("input", { type: "file", accept: ".json,application/json", style: { display: "none" } }); document.body.append(f);
+  f.addEventListener("change", () => { const file = f.files[0]; f.remove(); if (!file) return; const rd = new FileReader(); rd.onerror = () => toast("Não foi possível ler o arquivo.", "bad");
+    rd.onload = () => run(async () => {
+      let obj; try { obj = JSON.parse(rd.result); } catch (_) { throw E("O arquivo não é um JSON válido."); }
+      if (obj && obj.formato === "rifa-backup" && Array.isArray(obj.registros)) {
+        const ver = await C.verifyRecords(obj.registros); if (!ver.ok) throw E("Backup rejeitado: a cadeia não confere no registro #" + ver.errors[0].seq + " — " + limpaMsg(ver.errors[0].msg));
+        if (A.L.records.length && !(await confirmDlg("Restaurar backup", "O backup é íntegro (" + obj.registros.length + " registros). Ele SUBSTITUIRÁ os " + A.L.records.length + " registros atuais deste aparelho. Continuar?", "Substituir", true))) return;
+        await substituirTudo(obj.registros, obj.pessoas, obj.segredo, obj.publico, obj.midiabin); A.view = "painel"; render(); toast("Backup restaurado e verificado (" + obj.registros.length + " registros).", "ok"); return;
+      }
+      if (obj && obj.tickets && typeof obj.tickets === "object") {
+        const r = legadoParaRegistros(obj);
+        if (!(await confirmDlg("Importar rifa da versão anterior", "Encontrei " + r.qtd + " bilhete(s) vendido(s)/reservado(s) em uma série de " + r.total + ". Eles entram no novo livro (pagamentos com forma “Importado”). " + (A.L.records.length ? "Isso SUBSTITUI os dados atuais. " : "") + "Continuar?", "Importar", !!A.L.records.length))) return;
+        await substituirTudo(r.recs, r.pessoas, null); A.view = "painel"; render(); toast("Importação concluída: " + r.qtd + " bilhete(s). Revise os prêmios e o regulamento.", "ok"); return;
+      }
+      throw E("Arquivo não reconhecido: use um backup desta versão ou o JSON exportado pela versão anterior da rifa.");
+    }); rd.readAsText(file); });
+  f.click();
+}
+
+/* ---------- ajustes ---------- */
+function viewAjustes(v) {
+  const s = st();
+  v.append(h("section", { class: "card" }, h("h2", null, "Certame"), s.cfg ? h("div", null, kv([["Nome", s.cfg.certame], ["Beneficiário", s.cfg.beneficiario], ["Bilhetes", s.cfg.total + " a " + brl(s.cfg.valor_ponto_centavos)], ["Método", C.METODOS[s.cfg.metodo]], ["PIX", s.cfg.pix_chave + (s.cfg.pix_titular ? " — " + s.cfg.pix_titular : "")]]), h("button", { type: "button", onclick: () => abrirConfig(false) }, "Alterar configuração")) : h("button", { class: "primary", type: "button", onclick: () => abrirConfig(true) }, "Criar certame")));
+  if (s.cfgHist.length > 1) v.append(h("section", { class: "card" }, h("h2", null, "Histórico público da configuração"), dataTable({ rows: s.cfgHist.slice().reverse(), sort: -1, empty: "—", cols: [{ h: "Registro", r: (r) => "#" + r.seq }, { h: "Data", r: (r) => C.fmtDate(r.data) }, { h: "Bilhetes", r: (r) => r.dados.total + " a " + brl(r.dados.valor_ponto_centavos) }, { h: "Método", r: (r) => C.METODOS[r.dados.metodo] }, { h: "Motivo", r: (r) => r.motivo || "(criação)" }] }).el));
+  v.append(h("section", { class: "card" }, h("h2", null, "Aparência e privacidade"), h("div", { class: "row" }, h("button", { type: "button", onclick: () => { setTema(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark"); render(); } }, "Alternar tema claro/escuro"), h("button", { type: "button", onclick: () => { A.showFone = !A.showFone; render(); toast(A.showFone ? "Telefones visíveis nesta sessão." : "Telefones ocultos.", "ok"); } }, A.showFone ? "Ocultar telefones" : "Mostrar telefones"), h("button", { type: "button", disabled: !s.cfg, onclick: () => csvCompradores(true) }, "CSV de compradores com telefone"))));
+  v.append(h("section", { class: "card" }, h("h2", null, "Backup e restauração"), h("p", null, "O backup contém o livro completo (verificável) e o cadastro de compradores. Faça cópias com frequência e guarde fora do aparelho."),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: () => baixarBackup(false) }, "Baixar backup"), h("button", { type: "button", disabled: !A.segredo, onclick: () => baixarBackup(true) }, "Backup incluindo semente secreta"), h("button", { type: "button", onclick: importarArquivo }, "Restaurar backup / importar rifa antiga")), h("p", { class: "hint" }, "A semente secreta do sorteio digital só deve sair do aparelho num arquivo privado.")));
+  v.append(h("section", { class: "card" }, h("h2", null, "Zona de risco"), h("p", null, "“Novo certame” arquiva o atual (com backup) e recomeça limpo. “Excluir” remove tudo do aparelho. Correções do dia a dia (pagamento, reserva, prêmio, configuração) não precisam disso: ficam no Livro, preservando o histórico."), h("div", { class: "row" }, h("button", { type: "button", onclick: novoCertame }, "Novo certame (arquivar o atual)"), h("button", { class: "danger", type: "button", onclick: apagarTudo }, "Excluir certame e todos os dados"))));
+  v.append(h("section", { class: "card" }, h("h2", null, "Sobre"), h("p", null, "Rifa — Ação entre Amigos · livro-razão encadeado por SHA-256 (WebAssembly), regras de apuração verificáveis, bilhetes gráficos em alta resolução."), h("p", null, "© Carlos Alberto Reis 2026 · Apoio e sustentabilidade: PIX 61999487649"), h("button", { type: "button", onclick: apoio }, "Apoiar o projeto")));
+}
 function apoio() {
   let payload = null; try { payload = C.pixPayload({ chave: "61999487649", nome: "Carlos Alberto Reis", cidade: "Brasilia", txid: "APOIORIFA" }); } catch (_) {}
-  modal("Apoio e sustentabilidade", h("div", null, h("p", null, "Este portal é gratuito, sem anúncios e sem rastreadores. Se ajudou, você pode apoiar o desenvolvimento via PIX (chave celular):"), h("p", null, h("strong", { class: "mono" }, "61999487649"), " — Carlos Alberto Reis"), pixBox(payload, "PIX de apoio ao projeto"), h("p", { class: "hint" }, "© Carlos Alberto Reis 2026")), [{ label: "Fechar" }]);
+  modal("Apoio e sustentabilidade", h("div", null, h("p", null, "Este app é gratuito, offline e sem anúncios. Se ele ajudou, você pode apoiar o desenvolvimento via PIX (chave celular):"), h("p", null, h("strong", { class: "mono" }, "61999487649"), " — Carlos Alberto Reis"), pixBox(payload), h("p", { class: "hint" }, "© Carlos Alberto Reis 2026")), [{ label: "Fechar" }]);
 }
+
+/* ---------- recuperação ---------- */
+function viewRecuperacao(v) {
+  v.append(h("section", { class: "card" }, h("h2", null, "Os dados deste aparelho não passaram na verificação"), h("div", { class: "alert bad", role: "alert" }, A.erroCarga), h("p", null, "Nada foi apagado. Você pode baixar uma cópia bruta do que está salvo (para análise), restaurar um backup íntegro ou, como último recurso, apagar tudo."),
+    h("div", { class: "row" }, h("button", { type: "button", onclick: () => run(async () => { const all = (await Store.all("mov")).map((x) => x.v); downloadBlob("rifa-dados-brutos.json", new Blob([JSON.stringify({ registros: all, pessoas: A.pessoas }, null, 1)], { type: "application/json" })); }) }, "Baixar dados brutos"), h("button", { class: "primary", type: "button", onclick: importarArquivo }, "Restaurar backup"), h("button", { class: "danger", type: "button", onclick: apagarTudo }, "Apagar tudo"))));
+}
+
+/* ---------- inicialização ---------- */
+const VIEWFN = { painel: viewPainel, compradores: viewCompradores, premios: viewPremios, sorteio: viewSorteio, livro: viewLivro, relatorios: viewRelatorios, publicar: viewPublicar, ajustes: viewAjustes };
 async function boot() {
   try { await C.initWasm(WASM_B64); } catch (_) {}
+  await Store.open();
+  await carregarPublico();
+  try { A.pessoas = (await Store.get("kv", "pessoas")) || {}; A.segredo = (await Store.get("kv", "segredo")) || null; } catch (_) {}
+  let recs = []; try { recs = (await Store.all("mov")).map((x) => x.v); } catch (e) { A.erroCarga = "Não foi possível ler o armazenamento do navegador."; }
+  if (!A.erroCarga) { try { A.L.load(recs); } catch (e) { A.erroCarga = limpaMsg(e.message); A.L.reset(); } }
+  if (!A.erroCarga) { try { const anc = await Store.get("kv", "ancora"); if (anc && (A.L.records.length < anc.seq || A.L.state.hashes[anc.seq - 1] !== anc.hash)) A.avisoAncora = "O livro deste aparelho não confere com o último ponto de controle (registro #" + anc.seq + ", " + C.fmtIso(anc.data) + "): pode haver registros removidos ou alterados. Compare com o último backup antes de continuar."; } catch (_) {} }
   const b = $("btn-apoio"); if (b) b.addEventListener("click", apoio);
-  await carregar();
+  render();
 }
+
+/* Rifa — interface 5: publicação no portal (GitHub Pages) e importação de pedidos de reserva */
+const PUB_URL = "https://khareis159.github.io/rifa-solidaria-2026-27/", PUB_WA = "61999487649";
+A.publico = { url: PUB_URL, whatsapp: PUB_WA }; A.pedidos = {}; A.midiaBin = {};
+async function carregarPublico() { try { const p = await Store.get("kv", "publico"); if (p) A.publico = Object.assign({}, A.publico, p); const q = await Store.get("kv", "pedidos"); if (q) A.pedidos = q; const mb = await Store.get("kv", "midiabin"); if (mb) A.midiaBin = mb; } catch (_) {} }
+const salvarPublico = () => Store.putMany("kv", [["publico", A.publico]]);
+const salvarMidia = () => Store.putMany("kv", [["publico", A.publico], ["midiabin", A.midiaBin]]);
+const salvarPedidos = () => Store.putMany("kv", [["pedidos", A.pedidos]]);
+
+function viewPublicar(v) {
+  const s = st(); if (!s.cfg) return v.append(h("div", { class: "card" }, h("h2", null, "Publicar"), h("p", null, "Crie o certame primeiro.")));
+  const url = input({ value: A.publico.url, "aria-label": "Endereço do portal" }), wa = input({ value: fmtFone(A.publico.whatsapp), inputmode: "tel", "aria-label": "WhatsApp do organizador" });
+  const salvar = () => run(async () => { const w = digitos(wa.value); if (w.length < 10 || w.length > 13) throw E("WhatsApp inválido: use DDD + número."); const u = url.value.trim(); if (u && !/^https:\/\/[^\s]+$/.test(u)) throw E("O endereço deve começar com https://"); A.publico = Object.assign({}, A.publico, { url: u, whatsapp: w }); await salvarPublico(); toast("Dados de publicação salvos.", "ok"); return true; });
+  v.append(h("section", { class: "card" }, h("h2", null, "Portal público (GitHub Pages)"), h("p", null, "O portal é uma página só de leitura: qualquer pessoa vê as vendas e confere o livro; para reservar, envia um pedido pelo seu WhatsApp. Este aplicativo administrador continua só no seu aparelho."),
+    h("div", { class: "grid g2" }, field("Endereço do portal", url, "Onde o portal fica publicado."), field("WhatsApp do organizador (público)", wa, "Aparece no portal; os pedidos de reserva chegam aqui.")),
+    h("div", { class: "row" }, h("button", { type: "button", onclick: salvar }, "Salvar"), url.value ? h("a", { class: "btnlink", href: A.publico.url, target: "_blank", rel: "noopener noreferrer" }, "Abrir portal") : null)));
+  v.append(cardTransmissao(), cardMidia());
+  const aviso = C.scanPrivacidade(s.cfg ? A.L.records : [], A.pessoas).concat(C.scanPublico(A.publico).map((a) => ({ seq: 0, campo: a.campo, tipo: "dado pessoal", trecho: a.trecho }))), semApelido = Object.keys(A.pessoas).filter((c) => A.pessoas[c].apelido).length;
+  const priv = h("section", { class: "card" }, h("h2", null, "Verificação de privacidade"));
+  if (aviso.length) { priv.append(h("div", { class: "alert warn", role: "alert" }, "Encontrei " + aviso.length + " trecho(s) que parecem dados pessoais em campos públicos do livro (observações, motivos, configuração). Como o livro é público e não se apaga, revise antes de publicar:"), h("ul", null, aviso.slice(0, 15).map((a) => h("li", null, (a.seq ? "Registro #" + a.seq : "Texto público") + " · " + a.campo + " · " + a.tipo + ": “" + a.trecho + "”")))); }
+  else priv.append(h("div", { class: "alert ok" }, "Nenhum telefone, CPF, e-mail ou nome de comprador encontrado nos campos de texto do livro. O livro só guarda códigos (CMP-0001…)."));
+  priv.append(h("p", { class: "hint" }, "Nomes e telefones ficam só neste aparelho. No portal aparece o código do comprador, ou o apelido se o participante autorizou (" + semApelido + " apelido(s) cadastrado(s))."));
+  v.append(priv);
+  const gerar = () => run(async () => { if (aviso.length && !(await confirmDlg("Publicar com avisos?", "A verificação de privacidade encontrou " + aviso.length + " trecho(s). Gerar o arquivo mesmo assim?", "Gerar mesmo assim"))) return false;
+    const o = C.exportarPortal(A.L, A.publico, A.pessoas), txt = JSON.stringify(o), chk = C.validarPortalObj(JSON.parse(txt)); if (chk) throw E(chk);
+    downloadBlob("portal.json", new Blob([txt], { type: "application/json" })); toast("portal.json gerado (" + o.registros.length + " registros). Agora envie ao GitHub.", "ok", 8000); return true; });
+  v.append(h("section", { class: "card" }, h("h2", null, "Gerar e publicar o livro"), h("p", null, "Livro atual: ", h("strong", null, s.seq + " registro(s)"), " · cabeça ", h("span", { class: "mono" }, shortHash(s.head))),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: gerar }, "⬇ Gerar portal.json")),
+    h("ol", { class: "premlist" }, h("li", null, "Clique em “Gerar portal.json” (baixa o arquivo)."), h("li", null, "Se tiver fotos de prêmios, clique também em “Baixar fotos para enviar” (arquivos midia-….jpg)."), h("li", null, "Abra o repositório khareis159/rifa-solidaria-2026-27 no GitHub → Add file → Upload files, arraste o portal.json e as fotos midia-….jpg e confirme (Commit). Na primeira vez envie também o index.html do portal."), h("li", null, "Aguarde cerca de 1 a 10 minutos e abra o portal: ele mostra “publicado em…” e o número do último registro."), h("li", null, "Republique sempre que houver reservas, pagamentos ou sorteio novos.")),
+    h("div", { class: "alert warn" }, h("strong", null, "Nunca envie ao GitHub o backup (.json de backup) nem o rifa.html: o backup contém nomes, telefones e a semente secreta do sorteio. O repositório é público: só o portal.json e o index.html vão para lá."))));
+  v.append(h("section", { class: "card" }, h("h2", null, "Pedidos de reserva dos participantes"), h("p", null, "Quando alguém enviar um pedido pelo WhatsApp, cole aqui a mensagem inteira (o código RFP1-… está na última linha)."), h("button", { class: "primary", type: "button", onclick: () => importarPedido() }, "📥 Importar pedido")));
+}
+
+function acharPessoa(nome, fone) {
+  const f = digitos(fone), n = nome.trim().toLowerCase();
+  for (const c in A.pessoas) { const p = A.pessoas[c]; if (p.unidoA) continue; if (f && digitos(p.fone) === f) return c; }
+  for (const c in A.pessoas) { const p = A.pessoas[c]; if (p.unidoA) continue; if (!f && String(p.nome).trim().toLowerCase() === n) return c; }
+  return null;
+}
+function importarPedido(textoInicial) {
+  const ta = h("textarea", { rows: 7, placeholder: "Cole aqui a mensagem do WhatsApp com o código RFP1-…", "aria-label": "Mensagem do pedido", style: { width: "100%" } }); if (textoInicial) ta.value = textoInicial;
+  const out = h("div");
+  let ped = null;
+  const analisar = () => { clear(out); ped = null; if (!ta.value.trim()) return;
+    try {
+      const s = st(), o = C.pedidoDecodificar(ta.value); if (!s.cfg) throw E("Crie o certame antes."); if (o.id !== C.certameId(A.L.records)) throw E("Este pedido é de outro certame (identificador " + o.id + "). Não pode ser importado aqui.");
+      const total = Number(s.cfg.total), fora = o.bilhetes.filter((n) => n >= total); if (fora.length) throw E("O pedido tem números fora do certame: " + fora.join(", ") + ".");
+      const livres = o.bilhetes.filter((n) => !s.t[n]), ocup = o.bilhetes.filter((n) => s.t[n]), ck = ta.value.match(/RFP1-[A-Za-z0-9_-]+/)[0].slice(-8);
+      const pc = acharPessoa(o.nome, o.fone); ped = { o, livres, pc, ck };
+      out.append(kv([["Participante", o.nome], ["Telefone", o.fone ? fmtFone(o.fone) : "não informado"], ["Pedido feito em", o.ts ? C.fmtIso(o.ts) : "—"], ["Bilhetes pedidos", o.bilhetes.map(fnum).join(", ")], ["Valor", brl(BigInt(s.cfg.valor_ponto_centavos) * BigInt(o.bilhetes.length))], ["Cadastro", pc ? nomeP(pc) + " (" + pc + ") — já cadastrado" : "novo cadastro será criado"]]));
+      if (A.pedidos[ck]) out.append(h("div", { class: "alert warn" }, "Este pedido já foi importado antes (" + C.fmtIso(A.pedidos[ck]) + "). Importar de novo só funciona para bilhetes ainda livres."));
+      if (s.vendasEnc) out.append(h("div", { class: "alert bad" }, "As vendas estão encerradas; não é possível reservar."));
+      else if (!livres.length) out.append(h("div", { class: "alert bad" }, "Todos os bilhetes pedidos já foram ocupados por outra pessoa. Avise o participante."));
+      else { if (ocup.length) out.append(h("div", { class: "alert warn" }, "Já ocupados (" + ocup.map(fnum).join(", ") + "). Serão reservados só os livres: " + livres.map(fnum).join(", ") + "."));
+        else out.append(h("div", { class: "alert ok" }, "Todos os bilhetes estão livres.")); }
+    } catch (e) { out.append(h("div", { class: "alert bad", role: "alert" }, limpaMsg(e.message))); }
+  };
+  ta.addEventListener("input", analisar);
+  modal("Importar pedido de reserva", h("div", null, ta, out), [{ label: "Cancelar" }, { label: "Reservar", kind: "primary", onClick: async () => { analisar(); if (!ped || !ped.livres.length || st().vendasEnc) { toast("Nada a reservar com este pedido.", "bad"); return false; }
+    const r = await run(async () => { const { o, livres, ck } = ped; let cod = ped.pc, novas = null;
+      if (!cod) { cod = proxCodigo(); novas = {}; novas[cod] = { nome: o.nome, fone: o.fone || "" }; }
+      await lancar([{ tipo: "RESERVA", doc_seq: A.L.nextDoc("RESERVA"), data: hoje(), bilhetes: C.joinTickets(livres), comprador: cod }], novas);
+      A.pedidos[ck] = new Date().toISOString(); await salvarPedidos(); A.sel.clear(); render(); toast("Reserva registrada: " + livres.map(fnum).join(", ") + " para " + nomeP(cod) + ". Agora envie o PIX/cobrança.", "ok", 8000); return true; });
+    return r === true ? undefined : false; } }], { wide: true });
+  analisar();
+}
+
+/* ---------- transmissão ao vivo ---------- */
+function cardTransmissao() {
+  const url = input({ value: A.publico.transmissao_url || "", placeholder: "https://www.youtube.com/live/…", "aria-label": "Link da transmissão ao vivo" }), aviso = input({ value: A.publico.transmissao_aviso || "", maxlength: 160, placeholder: "Ex.: começa às 19h, com a tela do sistema compartilhada", "aria-label": "Aviso da transmissão" });
+  const plat = h("span", { class: "muted", "aria-live": "polite" });
+  const detecta = () => { try { const u = C.validarLink(url.value); plat.textContent = u ? "Plataforma detectada: " + C.plataformaLink(u) : "Sem link: o portal dirá que a transmissão ainda não foi divulgada."; plat.className = "muted"; } catch (e) { plat.textContent = limpaMsg(e.message); plat.className = "alert bad"; } };
+  url.addEventListener("input", detecta); detecta();
+  const salvar = () => run(async () => { const u = C.validarLink(url.value); const a = Object.assign({}, A.publico, { transmissao_url: u, transmissao_aviso: aviso.value.trim().replace(/\s+/g, " ") }); C.publicoExtra(a); A.publico = a; await salvarPublico(); toast(u ? "Transmissão salva. Gere e envie o portal.json para aparecer no portal." : "Transmissão removida.", "ok"); render(); return true; });
+  return h("section", { class: "card" }, h("h2", null, "Transmissão ao vivo do sorteio"), h("p", null, "Cole o link da live (YouTube, Facebook, Instagram, TikTok, Twitch, Kick, Meet…). O portal mostra o botão “Assistir ao vivo”, a contagem regressiva e um botão para adicionar a data ao calendário."),
+    h("div", { class: "grid g2" }, field("Link da transmissão (https)", url, "Só links https são aceitos. O portal abre o link em outra aba; não incorpora o vídeo."), field("Aviso curto (opcional)", aviso, "Texto público. Não escreva telefones nem nomes.")), plat,
+    h("div", { class: "row" }, h("button", { type: "button", onclick: salvar }, "Salvar transmissão")),
+    h("details", { class: "tec" }, h("summary", null, "Roteiro recomendado para a live"), h("ol", { class: "premlist" }, h("li", null, "Inicie a live uns 10 minutos antes e mostre a tela do administrador (aba Sorteio), sem expor a aba Compradores nem a tela de backup."), h("li", null, "Leia a âncora (aba Livro e auditoria) e o hash do compromisso, se for sorteio digital."), h("li", null, "Faça a apuração em frente às câmeras e mostre o bilhete sorteado."), h("li", null, "Logo depois, gere o portal.json, envie ao GitHub e mostre o portal já com o resultado."), h("li", null, "Guarde o endereço da gravação e, se quiser, cole-o no campo de vídeo abaixo."))));
+}
+
+/* ---------- fotos e vídeo dos prêmios ---------- */
+const b64de = (b) => { const bin = atob(b), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
+const b64en = (u8) => { let s = ""; for (let i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); return btoa(s); };
+async function processarImagem(file) {
+  if (!/^image\/(jpeg|png|webp|gif|bmp)$/.test(file.type)) throw E("Escolha uma imagem JPG, PNG ou WebP.");
+  if (file.size > 20e6) throw E("Imagem grande demais (máximo 20 MB).");
+  let bmp; try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch (_) { throw E("Não consegui abrir essa imagem."); }
+  let lado = 1280;
+  for (const q of [0.85, 0.75, 0.65, 0.55, 0.45]) {
+    const k = Math.min(1, lado / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), hh = Math.max(1, Math.round(bmp.height * k));
+    const cv = document.createElement("canvas"); cv.width = w; cv.height = hh; const cx = cv.getContext("2d"); cx.fillStyle = "#fff"; cx.fillRect(0, 0, w, hh); cx.drawImage(bmp, 0, 0, w, hh);
+    const blob = await new Promise((r) => cv.toBlob(r, "image/jpeg", q)); if (!blob) throw E("Não consegui converter a imagem.");
+    const u8 = new Uint8Array(await blob.arrayBuffer()); if (u8.length <= 600000) { if (bmp.close) bmp.close(); return { u8, w, h: hh }; }
+    if (q <= 0.65) lado = 1024;
+  }
+  throw E("Não consegui reduzir a imagem para menos de 600 KB.");
+}
+function adicionarFoto() {
+  const f = h("input", { type: "file", accept: "image/jpeg,image/png,image/webp", style: { display: "none" } }); document.body.append(f);
+  f.addEventListener("change", () => { const file = f.files[0]; f.remove(); if (!file) return; run(async () => {
+    if ((A.publico.midia || []).length >= 8) throw E("No máximo 8 fotos. Remova alguma antes.");
+    const img = await processarImagem(file), prem = st().premios, sel = select([{ v: "0", t: "Geral (todos os prêmios)" }].concat(prem.map((p, i) => ({ v: String(i + 1), t: (i + 1) + "º prêmio — " + C.descPremio(p, C.arrecadacao(st())).slice(0, 50) }))), "1", { "aria-label": "Prêmio da foto" });
+    const leg = input({ maxlength: 120, placeholder: "Ex.: Mini rádio de pilha AM/FM, vista frontal", "aria-label": "Legenda da foto" }), url = URL.createObjectURL(new Blob([img.u8], { type: "image/jpeg" }));
+    modal("Adicionar foto", h("div", null, h("img", { src: url, alt: "Prévia da foto", class: "foto-grande", style: { maxHeight: "40vh" } }), h("p", { class: "hint" }, img.w + "×" + img.h + " px · " + Math.round(img.u8.length / 1024) + " KB. A foto foi reduzida e regravada em JPEG: isso remove dados ocultos como a localização (GPS) do celular."), field("Prêmio", sel), field("Legenda (descreve a foto para quem não enxerga bem)", leg)),
+      [{ label: "Cancelar", onClick: () => URL.revokeObjectURL(url) }, { label: "Adicionar", kind: "primary", onClick: async () => { const r = await run(async () => {
+        const legenda = leg.value.trim().replace(/\s+/g, " "); if (legenda.length < 3) throw E("Escreva uma legenda curta para a foto.");
+        const hash = C.sha256Hex(img.u8), premio = Number(sel.value), arquivo = "midia-" + (premio ? "p" + premio : "geral") + "-" + hash.slice(0, 8) + ".jpg";
+        const m = { arquivo, sha256: hash, bytes: img.u8.length, premio, legenda, w: img.w, h: img.h }, lista = (A.publico.midia || []).filter((x) => x.arquivo !== arquivo).concat([m]); C.publicoExtra(Object.assign({}, A.publico, { midia: lista }));
+        A.publico = Object.assign({}, A.publico, { midia: lista }); A.midiaBin[arquivo] = b64en(img.u8); await salvarMidia(); URL.revokeObjectURL(url); render(); toast("Foto adicionada. Gere o portal.json e envie junto com as fotos.", "ok"); return true; }); return r === true ? undefined : false; } }], { wide: true });
+    return true; }); });
+  f.click();
+}
+const baixarFoto = (m) => { const b = A.midiaBin[m.arquivo]; if (!b) throw E("O arquivo desta foto não está mais neste aparelho. Remova e adicione de novo."); downloadBlob(m.arquivo, new Blob([b64de(b)], { type: "image/jpeg" })); };
+function cardMidia() {
+  const lista = A.publico.midia || [], vurl = input({ value: A.publico.video_url || "", placeholder: "https://youtu.be/…", "aria-label": "Link do vídeo do prêmio" }), vleg = input({ value: A.publico.video_legenda || "", maxlength: 120, placeholder: "Ex.: Vídeo mostrando o rádio funcionando", "aria-label": "Legenda do vídeo" });
+  const salvarVideo = () => run(async () => { const u = C.validarLink(vurl.value), a = Object.assign({}, A.publico, { video_url: u, video_legenda: vleg.value.trim().replace(/\s+/g, " ") }); C.publicoExtra(a); A.publico = a; await salvarPublico(); toast(u ? "Vídeo salvo." : "Vídeo removido.", "ok"); render(); return true; });
+  const tab = lista.length ? dataTable({ rows: lista.map((m, i) => Object.assign({ i }, m)), empty: "—", cols: [
+    { h: "Foto", r: (m) => A.midiaBin[m.arquivo] ? h("img", { class: "thumb", alt: m.legenda, src: "data:image/jpeg;base64," + A.midiaBin[m.arquivo] }) : h("span", { class: "muted" }, "(sem arquivo)") },
+    { h: "Prêmio", r: (m) => m.premio ? m.premio + "º" : "Geral" }, { h: "Legenda", r: (m) => m.legenda }, { h: "Arquivo", r: (m) => h("span", { class: "mono" }, m.arquivo + " · " + Math.round(m.bytes / 1024) + " KB") },
+    { h: "Ações", r: (m) => h("div", { class: "row" }, h("button", { class: "sm", type: "button", onclick: (e) => { e.stopPropagation(); run(async () => baixarFoto(m)); } }, "Baixar"), h("button", { class: "sm", type: "button", onclick: (e) => { e.stopPropagation(); run(async () => { A.publico = Object.assign({}, A.publico, { midia: lista.filter((x) => x.arquivo !== m.arquivo) }); delete A.midiaBin[m.arquivo]; await salvarMidia(); render(); toast("Foto removida da lista. Se já enviou o arquivo ao GitHub, apague-o lá também.", "ok", 8000); return true; }); } }, "Remover")) }] }).el : h("p", { class: "muted" }, "Nenhuma foto ainda.");
+  return h("section", { class: "card" }, h("h2", null, "Fotos e vídeo dos prêmios"), h("p", null, "Mostre o prêmio no portal. As fotos são reduzidas (até 1280 px, máx. 600 KB), regravadas em JPEG (sem GPS) e recebem uma impressão digital SHA-256 que o portal confere. O vídeo é um link para outra plataforma (leve e sem peso no GitHub)."),
+    h("div", { class: "row" }, h("button", { class: "primary", type: "button", onclick: adicionarFoto, disabled: lista.length >= 8 }, "🖼 Adicionar foto…"), lista.length ? h("button", { type: "button", onclick: () => run(async () => { for (const m of lista) { baixarFoto(m); await sleep(350); } toast("Fotos baixadas: envie todas ao repositório junto com o portal.json.", "ok", 8000); return true; }) }, "⬇ Baixar fotos para enviar (" + lista.length + ")") : null), tab,
+    h("div", { class: "grid g2" }, field("Link do vídeo do prêmio (https)", vurl, "YouTube, Facebook, Instagram, Drive…"), field("Legenda do vídeo (opcional)", vleg)), h("div", { class: "row" }, h("button", { type: "button", onclick: salvarVideo }, "Salvar vídeo")),
+    h("div", { class: "alert warn" }, h("strong", null, "Antes de fotografar: "), "não mostre rostos de terceiros, documentos, endereços ou telefones na imagem. Tudo que vai ao portal é público."));
+}
+
+/* Rifa — interface 4: detalhe humanizado do registro, correções (por reversão no livro), compradores (unir/excluir), novo certame, envio por arquivos */
+
+/* ---------- detalhe humanizado ---------- */
+const CFG_ROT = { certame: "Nome do certame", beneficiario: "Beneficiário", valor_ponto_centavos: "Valor do bilhete", total: "Quantidade de bilhetes", metodo: "Método de apuração", regra_vazio: "Se o bilhete apurado não estiver pago", data_sorteio: "Data do sorteio", concurso: "Concurso / fonte do resultado", pix_chave: "Chave PIX", pix_titular: "Titular da chave PIX", pix_cidade: "Cidade (PIX)", regulamento_extra: "Regulamento adicional", reserva_aviso_dias: "Aviso de reserva antiga" };
+function cfgVal(k, v) { if (k === "valor_ponto_centavos") return brl(v); if (k === "metodo") return C.METODOS[v] || v; if (k === "regra_vazio") return v === "PROXIMO" ? "usar o próximo bilhete pago" : "aguardar novo concurso"; if (k === "data_sorteio") return fmtDH(v); if (k === "reserva_aviso_dias") return v === "0" || !v ? "sem aviso" : v + " dia(s)"; return v === "" || v == null ? "—" : String(v); }
+function tabelaPremios(lista) { return h("div", { class: "tw" }, h("table", null, h("thead", null, h("tr", null, h("th", null, "Ordem"), h("th", null, "Tipo"), h("th", null, "Descrição / valor"))), h("tbody", null, lista.length ? lista.map((p, i) => h("tr", null, h("td", null, (i + 1) + "º"), h("td", null, C.TIPOS_PREMIO[p.tipo] || p.tipo), h("td", null, C.descPremio(p)))) : h("tr", null, h("td", { class: "empty", colspan: 3 }, "(nenhum prêmio)"))))); }
+function camposRegistro(r) {
+  const s = st(), P = [], who = (c) => nomeP(c) + " (" + c + ")", tk = () => C.parseTickets(r.bilhetes).map(fnum).join(", ");
+  P.push(["Documento", C.DOC_NOME[C.KIND[r.tipo]] + " nº " + r.doc_seq + " · código " + docCodigo(r)], ["Registro nº", String(r.seq)], ["Data do fato", C.fmtDate(r.data)], ["Gravado em", C.fmtIso(r.registrado_em)]);
+  switch (r.tipo) {
+    case "RESERVA": P.push(["Bilhetes", tk()], ["Comprador", who(r.comprador)]); break;
+    case "PAGAMENTO": { const n = C.parseTickets(r.bilhetes).length, u = BigInt(r.valor_unit_centavos); P.push(["Bilhetes", tk()], ["Comprador", who(r.comprador)], ["Quantidade", String(n)], ["Valor por bilhete", brl(u)], ["Total recebido", brl(u * BigInt(n))], ["Forma de pagamento", r.forma]); if (r.obs) P.push(["Observação", r.obs]); break; }
+    case "LIBERACAO": P.push(["Bilhetes liberados", tk()], ["Motivo", r.motivo]); break;
+    case "TRANSFERENCIA": P.push(["Bilhetes", tk()], ["Novo comprador", who(r.para)], ["Motivo", r.motivo]); break;
+    case "ESTORNO": { const ref = s.movs[Number(r.ref_seq) - 1]; P.push(["Anula o registro", "#" + r.ref_seq + " — " + (ref ? resumoRec(ref) : C.TIPO_NOME[r.tipo_ref])]); if (r.tipo_ref === "PAGAMENTO") P.push(["Destino dos bilhetes", r.destino === "LIVRE" ? "voltam a ficar livres" : "voltam a ficar reservados"]); P.push(["Motivo", r.motivo]); break; }
+    case "VENDAS": P.push(["Ação", r.acao === "ENCERRAR" ? "Encerramento das vendas" : "Reabertura das vendas"]); if (r.acao === "ENCERRAR") P.push(["Bilhetes pagos (elegíveis)", r.total_pagos], ["Arrecadação confirmada", brl(r.arrecadacao_centavos)], ["Hash da lista de elegíveis", h("span", { class: "mono brk" }, r.lista_pagos_hash)]); else P.push(["Motivo", r.motivo]); break;
+    case "COMPROMISSO": P.push(["Hash da semente (público)", h("span", { class: "mono brk" }, r.hash_semente)]); break;
+    case "SORTEIO": {
+      P.push(["Prêmio apurado", r.ordem + "º"], ["Método", C.METODOS[r.metodo]], ["Resultado", r.resultado === "GANHADOR" ? "Bilhete " + fnum(Number(r.bilhete)) + " — " + who((s.t[Number(r.bilhete)] || {}).comp || "") : "Sem ganhador (bilhete-base não pago; aguarda novo concurso)"], ["Valor do prêmio", brl(r.premio_valor_centavos)], ["Arrecadação na apuração", brl(r.arrecadacao_centavos)]);
+      if (r.metodo === "FEDERAL") P.push(["Número da Loteria Federal", r.premio_federal], ["Concurso", r.concurso_fed || "—"], ["Número-base (resto da divisão)", r.numero_base]); else P.push(["Semente revelada", h("span", { class: "mono brk" }, r.semente)], ["Entropia pública", r.entropia || "(nenhuma)"]);
+      P.push(["Hash da lista de elegíveis", h("span", { class: "mono brk" }, r.lista_pagos_hash)]); break; }
+    case "CONFIG": {
+      const k = s.cfgHist.findIndex((x) => x.seq === Number(r.seq)), ant = k > 0 ? s.cfgHist[k - 1].dados : null, linhas = [];
+      for (const f of Object.keys(CFG_ROT)) { const novo = r.dados[f], velho = ant ? ant[f] : undefined; if (!ant) linhas.push([CFG_ROT[f], cfgVal(f, novo)]); else if (novo !== velho) linhas.push([CFG_ROT[f], cfgVal(f, velho) + "  →  " + cfgVal(f, novo)]); }
+      P.push([ant ? "O que mudou" : "Dados iniciais", linhas.length ? kv(linhas) : "Nenhum campo mudou (regravação)"]); if (r.motivo) P.push(["Motivo", r.motivo]); break; }
+    case "PREMIOS": P.push(["Lista de prêmios", tabelaPremios(r.lista)]); if (r.motivo) P.push(["Motivo", r.motivo]); { const hh = s.premiosHist.find((x) => x.seq === Number(r.seq)); if (hh && hh.aposSorteio) P.push(["Situação", chip("alterado depois de iniciada a apuração", "warn")]); } break;
+  }
+  const anul = s.anulados[r.seq]; if (anul) P.push(["Situação atual", chip("anulado/estornado pelo registro #" + anul, "bad")]);
+  return P;
+}
+function detalheRegistro(r) {
+  const s = st(), P = camposRegistro(r), idx = Number(r.seq) - 1, prova = C.merkleProof(s.hashes, idx), mok = C.merkleVerify(r.hash, prova, C.merkleRoot(s.hashes));
+  const tec = h("details", { class: "tec" }, h("summary", null, "Dados técnicos de verificação"), kv([["Hash anterior", h("span", { class: "mono brk" }, r.hash_anterior)], ["Hash deste registro", h("span", { class: "mono brk" }, r.hash)], ["Prova de inclusão (Merkle)", mok ? chip("válida · " + prova.length + (prova.length === 1 ? " passo" : " passos"), "ok") : chip("inválida", "bad")], ["Registrado por", "Administrador do certame"]]));
+  const body = h("div", null, kv(P), tec), acts = [{ label: "Fechar" }], later = (f) => () => { setTimeout(() => run(f), 20); };
+  const hasCor = acoesCorrecao(r);
+  if (r.tipo === "PAGAMENTO") { acts.push({ label: "Ver bilhetes", onClick: later(() => { const ns = C.parseTickets(r.bilhetes).filter((n) => s.t[n]); if (!ns.length) throw E("Esses bilhetes já não estão mais em nome deste pagamento."); mostrarBilhetes(ns, r); }) }, { label: "Imprimir recibo", onClick: later(() => imprimirRecibo(r)) }); }
+  if (r.tipo === "SORTEIO") acts.push({ label: "Imprimir ata", onClick: later(() => imprimirAta(r)) });
+  for (const a of hasCor) acts.push({ label: a.label, kind: a.kind, onClick: later(a.fn) });
+  modal("Registro #" + r.seq + " — " + (C.TIPO_NOME[r.tipo] || r.tipo), body, acts, { wide: true });
+}
+
+/* ---------- correções: sempre por novo registro que reverte (o original permanece no histórico) ---------- */
+const donoAntes = (n, seq) => { let c = null; for (const r of st().movs) { if (Number(r.seq) >= seq) break; if (r.tipo === "RESERVA" || r.tipo === "PAGAMENTO" || r.tipo === "TRANSFERENCIA") { try { if (C.parseTickets(r.bilhetes).includes(n)) c = r.tipo === "TRANSFERENCIA" ? r.para : r.comprador; } catch (_) {} } } return c; };
+function acoesCorrecao(r) {
+  const s = st(), out = [], anul = s.anulados[r.seq], enc = s.vendasEnc;
+  const nums = () => { try { return C.parseTickets(r.bilhetes); } catch (_) { return []; } };
+  if (r.tipo === "PAGAMENTO" && !anul && !enc) out.push({ label: "Corrigir pagamento…", fn: () => dlgCorrigirPagamento(r) }, { label: "Estornar pagamento…", kind: "danger", fn: () => dlgEstorno(r) });
+  if (r.tipo === "RESERVA") { const ns = nums().filter((n) => s.t[n] && s.t[n].st === "RESERVADO" && s.t[n].seqRes === Number(r.seq)); if (ns.length && !enc) out.push({ label: "Trocar comprador…", fn: () => acaoTransferir(ns) }, { label: "Desfazer reserva…", kind: "danger", fn: () => acaoLiberar(ns) }); }
+  if (r.tipo === "LIBERACAO") { const ns = nums().filter((n) => !s.t[n]); if (ns.length && !enc) out.push({ label: "Reservar de novo…", fn: () => acaoReservar(ns) }); }
+  if (r.tipo === "TRANSFERENCIA") { const ns = nums().filter((n) => s.t[n] && s.t[n].comp === r.para && s.t[n].premio == null); if (ns.length) out.push({ label: "Reverter transferência…", fn: () => dlgReverterTransf(r, ns) }); }
+  if (r.tipo === "CONFIG") out.push({ label: "Editar configuração…", fn: () => abrirConfig(false) });
+  if (r.tipo === "PREMIOS") out.push({ label: "Editar prêmios…", fn: () => { A.view = "premios"; render(); } });
+  if (r.tipo === "VENDAS" && r.acao === "ENCERRAR" && enc && Number(r.seq) === s.vendasLog[s.vendasLog.length - 1].seq && !s.sorteios.length && !s.tentativas.length) out.push({ label: "Reabrir vendas…", fn: () => dlgReabrir() });
+  if (r.tipo === "SORTEIO" && r.resultado === "GANHADOR" && !anul && s.sorteios.length && s.sorteios[s.sorteios.length - 1].seq === Number(r.seq)) out.push({ label: "Anular apuração…", kind: "danger", fn: () => dlgAnular(s.sorteios[s.sorteios.length - 1]) });
+  if (r.tipo === "COMPROMISSO" && !enc && !s.sorteios.length) out.push({ label: "Substituir compromisso…", fn: () => { A.view = "sorteio"; render(); } });
+  return out;
+}
+function dlgEstorno(r) {
+  const mot = input({ maxlength: 160, "aria-label": "Motivo do estorno", placeholder: "Ex.: PIX não caiu / pagamento lançado errado" }), dest = select([{ v: "RESERVADO", t: "Voltam a ficar reservados para o mesmo comprador" }, { v: "LIVRE", t: "Voltam a ficar livres" }], "RESERVADO");
+  modal("Estornar pagamento #" + r.seq, h("div", null, h("p", null, "Nada é apagado: o estorno é um novo registro que reverte o pagamento, e o original continua no histórico. Só é possível se os bilhetes não foram premiados."), field("Destino dos bilhetes", dest), field("Motivo (obrigatório)", mot)),
+    [{ label: "Cancelar" }, { label: "Estornar", kind: "danger", onClick: async () => { const x = await run(async () => { await lancar([{ tipo: "ESTORNO", doc_seq: A.L.nextDoc("ESTORNO"), data: hoje(), ref_seq: String(r.seq), tipo_ref: "PAGAMENTO", motivo: mot.value.trim(), destino: dest.value }]); render(); toast("Pagamento estornado.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+function dlgCorrigirPagamento(r) {
+  const nums = C.parseTickets(r.bilhetes), bp = buyerPicker({ valor: r.comprador }), unit = decInput({ value: C.fmtDec(BigInt(r.valor_unit_centavos), 2, 2), "aria-label": "Valor por bilhete" }), forma = select(["PIX", "Dinheiro", "Transferência", "Cartão", "Cortesia", "Outro"], r.forma), obs = input({ maxlength: 120, value: r.obs || "" }), mot = input({ maxlength: 140, placeholder: "O que estava errado? (obrigatório)", "aria-label": "Motivo da correção" });
+  modal("Corrigir pagamento #" + r.seq, h("div", null, h("p", null, "Bilhetes ", h("strong", null, nums.map(fnum).join(", ")), ". A correção cria dois registros: o estorno do pagamento errado e um novo pagamento com os dados certos. O original continua visível no histórico."),
+    field("Comprador", bp.el), h("div", { class: "grid g2" }, field("Valor por bilhete (R$)", unit), field("Forma de pagamento", forma)), field("Observação", obs), field("Motivo da correção", mot)),
+  [{ label: "Cancelar" }, { label: "Registrar correção", kind: "primary", onClick: async () => { const x = await run(async () => {
+    const b = bp.get(), u = C.parseDec(unit.value, 2), m = mot.value.trim(); if (m.length < 3) throw E("Informe o motivo da correção (mín. 3 letras).");
+    const novo = { tipo: "PAGAMENTO", doc_seq: A.L.nextDoc("PAGAMENTO"), data: hoje(), bilhetes: r.bilhetes, comprador: b.codigo, valor_unit_centavos: String(u), forma: forma.value }; if (obs.value.trim()) novo.obs = obs.value.trim();
+    await lancar([{ tipo: "ESTORNO", doc_seq: A.L.nextDoc("ESTORNO"), data: hoje(), ref_seq: String(r.seq), tipo_ref: "PAGAMENTO", motivo: ("Correção: " + m).slice(0, 160), destino: "LIVRE" }, novo], b.novas); render(); toast("Pagamento corrigido (estorno + novo pagamento).", "ok"); return true; }); return x === true ? undefined : false; } }], { wide: true });
+}
+function dlgReverterTransf(r, ns) {
+  const antes = [...new Set(ns.map((n) => donoAntes(n, Number(r.seq))))]; if (antes.length !== 1 || !antes[0]) throw E("Esses bilhetes tinham donos diferentes antes da transferência. Use “Transferir” no Painel para cada grupo.");
+  const mot = input({ maxlength: 160, value: "Transferência feita por engano", "aria-label": "Motivo" });
+  modal("Reverter transferência #" + r.seq, h("div", null, h("p", null, "Os bilhetes ", h("strong", null, ns.map(fnum).join(", ")), " voltam para ", h("strong", null, nomeP(antes[0])), ". Será gravada uma nova transferência; a original continua no histórico."), field("Motivo", mot)),
+    [{ label: "Cancelar" }, { label: "Reverter", kind: "primary", onClick: async () => { const x = await run(async () => { await lancar([{ tipo: "TRANSFERENCIA", doc_seq: A.L.nextDoc("TRANSFERENCIA"), data: hoje(), bilhetes: C.joinTickets(ns), para: antes[0], motivo: mot.value.trim() }]); render(); toast("Transferência revertida.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+function dlgReabrir() {
+  const mot = input({ maxlength: 160, placeholder: "Motivo para reabrir (obrigatório)", "aria-label": "Motivo" });
+  modal("Reabrir vendas", h("div", null, h("p", null, "As vendas voltam a ficar abertas e a lista de elegíveis deixa de estar congelada. Só é possível enquanto não houver apuração."), field("Motivo", mot)), [{ label: "Cancelar" }, { label: "Reabrir", kind: "primary", onClick: async () => { const x = await run(async () => { await lancar([{ tipo: "VENDAS", doc_seq: A.L.nextDoc("VENDAS"), data: hoje(), acao: "REABRIR", motivo: mot.value.trim() }]); render(); toast("Vendas reabertas.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+function dlgAnular(ult) {
+  const mot = input({ maxlength: 160, placeholder: "Motivo da anulação (obrigatório)", "aria-label": "Motivo" });
+  modal("Anular apuração", h("div", null, h("p", null, "Anular o ", h("strong", null, ult.ordem + "º prêmio (bilhete " + fnum(ult.bilhete) + ")"), "? Nada é apagado: cria um estorno no livro, devolve o bilhete à lista e permite apurar de novo. Só a apuração mais recente pode ser anulada."), field("Motivo", mot)),
+    [{ label: "Cancelar" }, { label: "Anular", kind: "danger", onClick: async () => { const x = await run(async () => { await lancar([{ tipo: "ESTORNO", doc_seq: A.L.nextDoc("ESTORNO"), data: hoje(), ref_seq: String(ult.seq), tipo_ref: "SORTEIO", motivo: mot.value.trim(), destino: "" }]); render(); toast("Apuração anulada.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+
+/* ---------- compradores: unir duplicados e excluir cadastro sem uso ---------- */
+const codigoUsado = (c) => st().movs.find((r) => r.comprador === c || r.para === c);
+function unirComprador(codigo) {
+  const outros = Object.keys(A.pessoas).filter((c) => c !== codigo && !A.pessoas[c].unidoA); if (!outros.length) throw E("Não há outro comprador para unir. Cadastre o cadastro correto primeiro.");
+  const sel = select([{ v: "", t: "— escolha o cadastro que fica —" }].concat(outros.map((c) => ({ v: c, t: nomeP(c) + " (" + c + ")" }))), "", { "aria-label": "Cadastro de destino" });
+  const r = resumoCompradores().find((x) => x.codigo === codigo) || { res: [], pag: [] }, ns = r.res.concat(r.pag).sort((a, b) => a - b);
+  modal("Unir “" + nomeP(codigo) + "” a outro cadastro", h("div", null, h("p", null, "Use para duplicados (ex.: o mesmo nome digitado de dois jeitos). Os " + ns.length + " bilhete(s) atuais passam para o cadastro escolhido por uma transferência registrada no livro; o histórico antigo continua com o nome original."), field("Cadastro que permanece", sel)),
+    [{ label: "Cancelar" }, { label: "Unir", kind: "primary", onClick: async () => { const x = await run(async () => { const to = sel.value; if (!to) throw E("Escolha o cadastro que permanece.");
+      if (ns.length) await lancar([{ tipo: "TRANSFERENCIA", doc_seq: A.L.nextDoc("TRANSFERENCIA"), data: hoje(), bilhetes: C.joinTickets(ns), para: to, motivo: ("União de cadastros: " + nomeP(codigo) + " → " + nomeP(to)).slice(0, 160) }]);
+      A.pessoas[codigo] = Object.assign({}, A.pessoas[codigo], { unidoA: to }); await salvarPessoas(); render(); toast("Cadastros unidos.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+async function excluirComprador(codigo) {
+  const uso = codigoUsado(codigo); if (uso) throw E("Este cadastro aparece no livro (registro #" + uso.seq + ") e por isso não pode ser excluído. Corrija o nome ou use “Unir a outro cadastro”.");
+  if (!(await confirmDlg("Excluir cadastro", "Excluir o cadastro de " + nomeP(codigo) + "? Ele não tem nenhum registro no livro.", "Excluir", true))) return;
+  delete A.pessoas[codigo]; await salvarPessoas(); render(); toast("Cadastro excluído.", "ok");
+}
+
+/* ---------- novo certame / excluir tudo ---------- */
+async function reiniciar(o) {
+  if (o.backup && A.L.records.length) { baixarBackup(true); await sleep(500); }
+  const keep = o.manterPessoas ? A.pessoas : {};
+  await Store.clear("mov"); await Store.clear("kv"); A.L.load([]); A.pessoas = keep; A.segredo = null; A.publico = { url: A.publico.url, whatsapp: A.publico.whatsapp }; A.midiaBin = {}; A.pedidos = {}; await Store.putMany("kv", [["publico", A.publico]]); A.sel.clear(); A.avisoAncora = null; A.erroCarga = null; A.view = "painel"; A.filtro = ""; A.fstat = "";
+  if (o.manterPessoas) await Store.putMany("kv", [["pessoas", A.pessoas]]); render();
+}
+function novoCertame() {
+  const mp = h("input", { type: "checkbox", id: "ck-mp", checked: true }), bk = h("input", { type: "checkbox", id: "ck-bk", checked: true });
+  modal("Novo certame", h("div", null, h("p", null, "O certame atual será arquivado: o app baixa um backup completo (com a semente, se houver) e começa um certame novo, vazio."),
+    h("label", { class: "inline", for: "ck-mp" }, mp, " Manter o cadastro de compradores"), h("br"), h("label", { class: "inline", for: "ck-bk" }, bk, " Baixar backup antes (recomendado)"), h("p", { class: "hint" }, "Para consultar o certame arquivado depois, use “Restaurar backup”.")),
+    [{ label: "Cancelar" }, { label: "Arquivar e começar novo", kind: "primary", onClick: async () => { const x = await run(async () => { await reiniciar({ manterPessoas: mp.checked, backup: bk.checked }); toast("Certame arquivado. Crie o novo certame.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+function apagarTudo() {
+  const t = input({ placeholder: "Digite APAGAR", "aria-label": "Confirmação" }), bk = h("input", { type: "checkbox", id: "ck-bk2", checked: true });
+  modal("Excluir certame e todos os dados", h("div", null, h("p", null, "Remove do aparelho todos os registros, compradores e a semente. Isso é diferente de corrigir (que preserva o histórico) e não pode ser desfeito sem um backup."), h("label", { class: "inline", for: "ck-bk2" }, bk, " Baixar backup antes (recomendado)"), h("p", null, "Digite ", h("strong", null, "APAGAR"), " para confirmar."), t),
+    [{ label: "Cancelar" }, { label: "Excluir definitivamente", kind: "danger", onClick: async () => { if (t.value.trim() !== "APAGAR") { toast("Digite APAGAR para confirmar.", "bad"); return false; } const x = await run(async () => { await reiniciar({ manterPessoas: false, backup: bk.checked }); toast("Dados excluídos.", "ok"); return true; }); return x === true ? undefined : false; } }]);
+}
+
+/* ---------- envio ao participante: ARQUIVOS (não mensagem de recibo) ---------- */
+function reciboTexto(nums, comp, rec) {
+  const s = st(), c = s.cfg, p = A.pessoas[comp] || { nome: comp }, L = [];
+  L.push("COMPROVANTE — " + c.certame, "Beneficiário: " + (c.beneficiario || "—"), "Participante: " + p.nome, "Emitido em: " + new Date().toLocaleString("pt-BR"), "");
+  if (rec) { const u = BigInt(rec.valor_unit_centavos), n = C.parseTickets(rec.bilhetes).length; L.push("RECIBO DE PAGAMENTO nº " + docCodigo(rec), "Registro no livro: #" + rec.seq + " · data " + C.fmtDate(rec.data), "Forma: " + rec.forma + " · " + n + " × " + brl(u) + " = " + brl(u * BigInt(n)), ""); }
+  L.push("BILHETES:"); for (const n of nums) { const t = s.t[n]; L.push("  Nº " + fnum(n) + " — " + (t.premio != null ? "PREMIADO (" + t.premio + "º prêmio)" : t.st === "PAGO" ? "PAGO " + brl(t.unit) : "RESERVADO (aguardando pagamento)") + " — código " + C.codigoBilhete(s, n)); }
+  L.push("", "Sorteio: " + fmtDH(c.data_sorteio) + " · " + C.METODOS[c.metodo], "O regulamento e o histórico completo estão com o organizador" + (c.pix_titular ? " (" + c.pix_titular + ")" : "") + ".");
+  L.push("", rec ? "Hash SHA-256 do registro (para conferência): " + rec.hash : "Estado do livro: " + s.seq + " registro(s) · cabeça SHA-256 " + s.head);
+  L.push("", "GUARDE ESTE ARQUIVO. Os códigos acima identificam seus bilhetes no livro verificável do certame.", "© Carlos Alberto Reis 2026 · Rifa — livro verificável");
+  return L.join("\r\n");
+}
+async function arquivosParticipante(nums, comp, rec) {
+  const files = [], MAX = 12;
+  for (const n of nums.slice(0, MAX)) { const cv = document.createElement("canvas"); drawTicket(cv, n, 1.5); files.push(new File([await canvasParaBlob(cv)], "bilhete-" + fnum(n) + ".png", { type: "image/png" })); }
+  files.push(new File([reciboTexto(nums, comp, rec)], "recibo-" + (rec ? docCodigo(rec) : "comprovante") + ".txt", { type: "text/plain" }));
+  return files;
+}
+async function enviarParticipante(nums, rec) {
+  const s = st(), arr = nums.slice().sort((a, b) => a - b), comps = [...new Set(arr.map((n) => s.t[n] && s.t[n].comp).filter(Boolean))];
+  if (comps.length !== 1) throw E("Escolha bilhetes de um único comprador para enviar.");
+  const comp = comps[0], p = A.pessoas[comp] || { nome: comp, fone: "" }, body = h("div", null, h("p", { class: "muted" }, "Preparando os arquivos…")), m = modal("Enviar ao participante — " + p.nome, body, [{ label: "Fechar" }]);
+  let files; try { files = await arquivosParticipante(arr, comp, rec); } catch (e) { clear(body); body.append(h("div", { class: "alert bad" }, limpaMsg(e.message))); return; }
+  const prim = String(p.nome).split(" ")[0], curto = "Olá, " + prim + "! Segue em anexo o seu bilhete e o comprovante do certame “" + s.cfg.certame + "”. Salve os arquivos no seu aparelho. Obrigado!";
+  let can = false; try { can = !!(navigator.share && navigator.canShare && navigator.canShare({ files })); } catch (_) {}
+  const fd = digitos(p.fone), wa = "https://wa.me/" + (fd.length >= 10 ? (fd.length <= 11 ? "55" + fd : fd) : "") + "?text=" + encodeURIComponent(curto);
+  clear(body);
+  body.append(h("div", { class: "alert warn" }, "O WhatsApp pode apagar mensagens e mídias antigas (mensagens temporárias, limpeza de armazenamento). Por isso o app não manda o recibo como texto: envie os ", h("strong", null, "arquivos"), " e peça ao participante para salvá-los na galeria ou em Documentos."),
+    h("p", null, files.length + " arquivo(s) prontos: " + files.map((f) => f.name).join(", ") + (arr.length > 12 ? " (imagens dos 12 primeiros bilhetes; o comprovante .txt lista todos)." : ".")),
+    h("div", { class: "row" },
+      h("button", { class: "primary", type: "button", disabled: !can, onclick: () => run(async () => { try { await navigator.share({ files, title: "Bilhetes — " + s.cfg.certame, text: curto }); } catch (e) { if (e && e.name !== "AbortError") throw E("O navegador não conseguiu compartilhar os arquivos. Use “Baixar arquivos”."); } }) }, "Compartilhar arquivos (WhatsApp)"),
+      h("button", { type: "button", onclick: () => run(async () => { for (const f of files) { downloadBlob(f.name, f); await sleep(350); } toast("Arquivos baixados. No WhatsApp, anexe-os pelo clipe (como documento ou imagem).", "ok", 8000); }) }, "Baixar arquivos"),
+      h("a", { class: "btnlink", href: wa, target: "_blank", rel: "noopener noreferrer" }, "Abrir conversa (texto curto)"),
+      h("button", { type: "button", disabled: !(window.ClipboardItem && navigator.clipboard && navigator.clipboard.write), onclick: () => run(async () => { await navigator.clipboard.write([new ClipboardItem({ "image/png": files[0] })]); toast("Imagem do 1º bilhete copiada: cole (Ctrl+V) na conversa.", "ok"); }) }, "Copiar imagem do bilhete")),
+    h("p", { class: "hint" }, can ? "Em computadores, se o compartilhamento direto falhar, use “Baixar arquivos” e anexe pelo clipe." : "Compartilhar direto não está disponível neste navegador/modo (costuma funcionar no celular, em página segura). Use “Baixar arquivos” e anexe na conversa."));
+}
+
 boot();
 
 })();
