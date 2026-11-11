@@ -1142,15 +1142,20 @@ function cardAoVivo() {
   box.append(h("p", { class: "hint" }, "A transmissão é um complemento. O resultado oficial é o que fica registrado no livro (aba Resultados) e pode ser conferido por qualquer pessoa. O link abre em outro site e não faz parte da verificação do livro."));
   return box;
 }
-async function carregarFoto(m) {
-  if (P.midia[m.arquivo]) return P.midia[m.arquivo];
+async function buscarFoto(m, url, opc) {
+  const resp = await fetch(url, opc); if (!resp.ok) throw E("arquivo não encontrado (" + resp.status + ")");
+  const u8 = new Uint8Array(await resp.arrayBuffer()); return { u8, ok: u8.length === m.bytes && C.sha256Hex(u8) === m.sha256 };
+}
+async function carregarFoto(m, forcar) {
+  if (!forcar && P.midia[m.arquivo]) return P.midia[m.arquivo];
   let r;
   try {
     if (location.protocol === "file:") throw E("abra pelo endereço publicado");
-    const resp = await fetch(m.arquivo, { cache: "force-cache" }); if (!resp.ok) throw E("arquivo não encontrado (" + resp.status + ")");
-    const u8 = new Uint8Array(await resp.arrayBuffer());
-    if (u8.length !== m.bytes || C.sha256Hex(u8) !== m.sha256) r = { erro: "NÃO confere com a impressão digital publicada. Não confie nesta foto; avise o organizador.", grave: true };
-    else r = { url: URL.createObjectURL(new Blob([u8], { type: "image/jpeg" })) };
+    let x = null; try { x = await buscarFoto(m, m.arquivo); } catch (_) { x = null; }
+    /* falha, erro em cache (o GitHub Pages guarda até um 404 por ~10 min) ou arquivo antigo: insiste uma vez, ignorando o cache */
+    if (!x || !x.ok) x = await buscarFoto(m, m.arquivo + "?v=" + Date.now(), { cache: "no-store" });
+    if (!x.ok) r = { erro: "NÃO confere com a impressão digital publicada. Não confie nesta foto; avise o organizador.", grave: true };
+    else r = { url: URL.createObjectURL(new Blob([x.u8], { type: "image/jpeg" })) };
   } catch (e) { r = { erro: "Foto indisponível (" + limpaMsg(e.message || e) + ")." }; }
   P.midia[m.arquivo] = r; return r;
 }
